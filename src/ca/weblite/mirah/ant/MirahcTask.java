@@ -53,6 +53,7 @@ public class MirahcTask extends Task {
 
             @Override
             public void enterNode(Context cntxt, Node node, boolean bln) {
+                cntxt.get(null)
                 //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
             }
 
