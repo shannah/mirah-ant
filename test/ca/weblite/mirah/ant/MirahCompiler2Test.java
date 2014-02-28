@@ -22,6 +22,8 @@ public class MirahCompiler2Test {
     public void testCompile() {
         
         String mirahSrc = "package mypkg\n"
+                +" import java.util.List\n"
+                +" import java.awt.*\n"
                 +" class MirahClass < JavaClass \n"
                 +"    def initialize(jc:JavaClass)\n"
                 +"        @jc = jc\n"
@@ -47,7 +49,7 @@ public class MirahCompiler2Test {
         
         MirahCompiler2 compiler = new MirahCompiler2();
         compiler.addFakeFile("MirahClass.mirah", mirahSrc);
-        compiler.addFakeJavaSourceFile("JavaClass.java", javaSrc);
+        compiler.addFakeJavaSourceFile("mypkg/JavaClass.java", javaSrc);
         compiler.compile(new String[0]);
     }
     
@@ -98,7 +100,7 @@ public class MirahCompiler2Test {
         
         MirahCompiler2 compiler = new MirahCompiler2();
         compiler.addFakeFile("MirahClass.mirah", mirahSrc);
-        compiler.addFakeJavaSourceFile("JavaClass.java", javaSrc);
+        compiler.addFakeJavaSourceFile("mypkg/JavaClass.java", javaSrc);
         compiler.compile(new String[0]);
     }
     
@@ -145,8 +147,18 @@ public class MirahCompiler2Test {
         
         MirahCompiler2 compiler = new MirahCompiler2();
         compiler.addFakeFile("MirahClass.mirah", mirahSrc);
-        compiler.addFakeJavaSourceFile("JavaClass.java", javaSrc);
+        compiler.addFakeJavaSourceFile("mypkg/JavaClass.java", javaSrc);
         compiler.compile(new String[0]);
     }
     
+    
+    @Test
+    public void testSample1(){
+        
+        MirahCompiler2 compiler = new MirahCompiler2();
+        compiler.setCompileJavaSources(true);
+        compiler.setClasspath("sample_src_dirs/sample1/src:sample_src_dirs/sample1:build");
+        compiler.setDestination("sample_src_dirs/sample1/build");
+        compiler.compile(new String[]{"sample_src_dirs/sample1/src/mypkg/MirahClass.mirah"});
+    }
 }
