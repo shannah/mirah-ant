@@ -86,7 +86,7 @@ public class MirahcTask extends Task {
         }
         
         c.compile(new String[]{javac.getSrcdir().toString()});
-        //javac.execute();
+        javac.execute();
         
             
         
