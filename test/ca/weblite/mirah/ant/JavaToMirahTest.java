@@ -166,8 +166,8 @@ public class JavaToMirahTest {
             
             Mirahc mirahc = new Mirahc();
             mirahc.setClasspath(src.getPath()+":"+build.getPath());
-            mirahc.
-            mirahc.addFileOrDirectory(src);
+            //mirahc.
+            //mirahc.addFileOrDirectory(src);
             mirahc.setDestination(build.getPath());
             mirahc.compile(new String[0]);
             

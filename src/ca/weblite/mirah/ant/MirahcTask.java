@@ -12,20 +12,11 @@ package ca.weblite.mirah.ant;
 // javac.classpath=${ant.core.lib}
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import javax.tools.Diagnostic;
-import mirah.lang.ast.Node;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
+import org.apache.tools.ant.taskdefs.Javac;
 import org.apache.tools.ant.types.Path;
-import org.apache.tools.ant.types.Resource;
-import org.apache.tools.ant.types.resources.FileResource;
-import org.mirah.jvm.mirrors.debug.DebuggerInterface;
-import org.mirah.tool.Mirahc;
-import org.mirah.typer.TypeFuture;
-import org.mirah.util.Context;
-import org.mirah.util.SimpleDiagnostics;
 
 /**
  * @author shannah
@@ -35,41 +26,38 @@ public class MirahcTask extends Task {
     private Path classPath;
     private Path macroClassPath;
     private Path bootClassPath;
-    private Path src;
-    private Path dest;
+    private File dest;
+    private List<File> files = new ArrayList();
+    private String jvmVersion;
+    private Path javaSourcesPath;
+    private boolean compileJavaSources = false;
+    private Javac javac;
+    
+    public void addConfiguredJavac(final Javac javac) {
+        if ( javac != null ){
+            compileJavaSources = false;
+        }
+        this.javac = javac;
+    }
+    
+    private void processJointParameters(){
+        if ( javac != null ){
+            classPath = javac.getClasspath();
+            bootClassPath = javac.getBootclasspath();
+            javaSourcesPath = javac.getSourcepath();
+            dest = javac.getDestdir();
+            jvmVersion = javac.getTarget();
+            
+        }
+    }
     
     
     public @Override
     void execute() throws BuildException {
-        final List<String> messages = new ArrayList<String>();
-        Mirahc c = new Mirahc();
+        processJointParameters();
         
-        c.setDebugger(new DebuggerInterface(){
-
-            @Override
-            public void parsedNode(Node node) {
-                //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-            }
-
-            @Override
-            public void enterNode(Context cntxt, Node node, boolean bln) {
-                cntxt.get(null)
-                //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-            }
-
-            @Override
-            public void exitNode(Context cntxt, Node node, TypeFuture tf) {
-                //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-            }
-
-            @Override
-            public void inferenceError(Context cntxt, Node node, TypeFuture tf) {
-                //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-                System.out.println("Inference error "+cntxt+" "+node+" "+tf);
-                System.out.println(tf.resolve());
-            }
-            
-        });
+        MirahCompiler2 c = new MirahCompiler2();
+        
         
         if ( getBootClassPath() != null ){
             c.setBootClasspath(getBootClassPath().toString());
@@ -83,63 +71,25 @@ public class MirahcTask extends Task {
         if ( getDest() != null ){
             c.setDestination(getDest().toString());
         }
-        
-        List<File> mirahStubs = new ArrayList<File>();
-        Iterator<Resource> it = getSrc().iterator();
-        int i = 0;
-        JavaToMirah stubber = new JavaToMirah();
-        while ( it.hasNext()){
-            
-            Resource nex = it.next();
-            if ( nex instanceof FileResource ){
-                final List<String> localMessages = new ArrayList<String>();
-                c.setDiagnostics(new SimpleDiagnostics(true){
-
-                    @Override
-                    public void log(Diagnostic.Kind kind, String position, String message) {
-                        localMessages.add(kind.toString()+": "+position+" : "+message);
-                    }
-
-                });
-                FileResource file = (FileResource)nex;
-                c.addFileOrDirectory(file.getFile());
-                boolean success = false;
-                try {
-                    if ( c.compile(new String[0]) == 0 ){
-                        success = true;
-                    }
-                    
-                } catch ( Exception ex){
-                    // Failed to compile for some reason
-                    localMessages.add(ex.getMessage());
-                    
-                }
-                
-                if ( !success ){
-                    
-                    File mirahStub = new File(file.getFile(), "MirahStub"+i+".mirah");
-                    try {
-                        stubber.createMirahStubs(file.getFile(), mirahStub);
-                        if ( c.compile(new String[0]) == 0 ){
-                            success = true;
-                            
-                        }
-
-                    } catch ( Exception e){
-                        localMessages.add(e.getMessage());
-                    }
-                }
-                
-                if ( !success ){
-                    messages.addAll(localMessages);
-                }
-  
-            }
-            for ( String msg : messages ){
-                System.err.println(msg);
-            }
-            
+        if ( getJavaSourcesPath() != null ){
+            c.setJavaSourceClasspath(getJavaSourcesPath().toString());
         }
+        
+        c.setCompileJavaSources(isCompileJavaSources());
+        
+        if ( getJvmVersion() != null ){
+            c.setJvmVersion(getJvmVersion());
+        }
+        System.out.println("Files:");
+        for ( File f : javac.getFileList() ){
+            System.out.println("File "+f);
+        }
+        
+        c.compile(new String[]{javac.getSrcdir().toString()});
+        //javac.execute();
+        
+            
+        
         
         
         
@@ -191,32 +141,62 @@ public class MirahcTask extends Task {
         this.bootClassPath = bootClassPath;
     }
 
-    /**
-     * @return the src
-     */
-    public Path getSrc() {
-        return src;
-    }
-
-    /**
-     * @param src the src to set
-     */
-    public void setSrc(Path src) {
-        this.src = src;
-    }
+    
 
     /**
      * @return the dest
      */
-    public Path getDest() {
+    public File getDest() {
         return dest;
     }
 
     /**
      * @param dest the dest to set
      */
-    public void setDest(Path dest) {
+    public void setDest(File dest) {
         this.dest = dest;
+    }
+
+    /**
+     * @return the jvmVersion
+     */
+    public String getJvmVersion() {
+        return jvmVersion;
+    }
+
+    /**
+     * @param jvmVersion the jvmVersion to set
+     */
+    public void setJvmVersion(String jvmVersion) {
+        this.jvmVersion = jvmVersion;
+    }
+
+    /**
+     * @return the javaSourcesPath
+     */
+    public Path getJavaSourcesPath() {
+        return javaSourcesPath;
+    }
+
+    /**
+     * @param javaSourcesPath the javaSourcesPath to set
+     */
+    public void setJavaSourcesPath(Path javaSourcesPath) {
+        this.javaSourcesPath = javaSourcesPath;
+    }
+
+    /**
+     * @return the compileJavaSources
+     */
+    public boolean isCompileJavaSources() {
+        return compileJavaSources;
+    }
+
+    /**
+     * @param compileJavaSources the compileJavaSources to set
+     */
+    public void setCompileJavaSources(boolean compileJavaSources) {
+        this.compileJavaSources = compileJavaSources;
     }
     
     

@@ -158,6 +158,7 @@ public class MirahCompiler2Test {
         MirahCompiler2 compiler = new MirahCompiler2();
         compiler.setCompileJavaSources(true);
         compiler.setClasspath("sample_src_dirs/sample1/src:sample_src_dirs/sample1:build");
+        compiler.setJavaSourceClasspath("sample_src_dirs/sample1/src");
         compiler.setDestination("sample_src_dirs/sample1/build");
         compiler.compile(new String[]{"sample_src_dirs/sample1/src/mypkg/MirahClass.mirah"});
     }

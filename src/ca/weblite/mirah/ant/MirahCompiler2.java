@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,14 +24,12 @@ import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import mirah.lang.ast.Import;
 import mirah.lang.ast.Node;
-import mirah.lang.ast.NodeFilter;
 import org.mirah.jvm.mirrors.MirrorTypeSystem;
 import org.mirah.jvm.mirrors.debug.DebuggerInterface;
 import org.mirah.tool.Mirahc;
 import org.mirah.typer.TypeFuture;
 import org.mirah.typer.TypeSystem;
 import org.mirah.util.Context;
-import org.mirah.util.SimpleDiagnostics;
 
 /**
  * A "better" Mirah compiler.  This supports circular dependencies between
@@ -38,10 +37,14 @@ import org.mirah.util.SimpleDiagnostics;
  * @author shannah
  */
 public class MirahCompiler2 extends Mirahc {
-    
+    private String jvmVersion = null;
+    private String bootClassPath = null;
     private Set<File> javaSourceDependencies = new HashSet<>();
     private Set<String> loadedIds = new HashSet<>();
     private boolean compileJavaSources = false;
+    URL[] javaSourceClasspath = null;
+    
+    
     
     
     
@@ -65,6 +68,26 @@ public class MirahCompiler2 extends Mirahc {
      */
     final private Map<String,String> fakeJavaSourceFiles = new HashMap<>();
     
+    
+    public void setJavaSourceClasspath(String path){
+        if ( path == null || "".equals(path)){
+            javaSourceClasspath = new URL[0];
+            return;
+        }
+        String[] paths = path.split(File.pathSeparator);
+        javaSourceClasspath = new URL[paths.length];
+        for ( int i=0; i<paths.length; i++){
+            try {
+                javaSourceClasspath[i] = new File(paths[i]).toURL();
+            } catch (MalformedURLException ex) {
+                Logger.getLogger(MirahCompiler2.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+    
+    public URL[] getJavaSourceClasspath(){
+        return (javaSourceClasspath == null ) ? new URL[0] : javaSourceClasspath;
+    }
     
     /**
      * Adds a .java source file or directory path to the list of files
@@ -113,7 +136,9 @@ public class MirahCompiler2 extends Mirahc {
     }
     
     private String getPathFromRoot(File f){
-        for ( URL root : this.classpath() ){
+        URL[] cp = this.getJavaSourceClasspath();
+        if ( cp.length == 0 ) cp = this.classpath();
+        for ( URL root : cp ){
             if ( f.getPath().startsWith(root.getFile())){
                 return f.getPath().substring(root.getFile().length());
             }
@@ -185,7 +210,10 @@ public class MirahCompiler2 extends Mirahc {
                 }
             }
             
-            for ( URL srcRoot : this.classpath() ){
+            URL[] cp = this.getJavaSourceClasspath();
+            if ( cp.length == 0 ) cp = this.classpath();
+            
+            for ( URL srcRoot : cp ){
                 File rootDir = new File(srcRoot.getFile());
                 if ( rootDir.isDirectory() ){
                     File packageDir = new File(rootDir.getPath()+"/"+idPath);
@@ -289,6 +317,16 @@ public class MirahCompiler2 extends Mirahc {
      */
     @Override
     public int compile(String[] args) {
+        List<String> filteredArgs = new ArrayList<String>();
+        for ( int i=0; i<args.length; i++){
+            if ( "--javac:sources".equals(args[i])){
+                this.setJavaSourceClasspath(args[i+1]);
+                i++;
+            } else {
+                filteredArgs.add(args[i]);
+            }
+        }
+        args = filteredArgs.toArray(new String[0]);
         javaSourceDependencies.clear();
         loadedIds.clear();
         installDebugger();
@@ -311,21 +349,73 @@ public class MirahCompiler2 extends Mirahc {
                 sb.append(File.pathSeparator);
             }
         }
-        int numFiles = javaSourceDependencies.size();
         String classPath = sb.toString();
-        String[] args = new String[numFiles+4];
+        
+        
+        int numFiles = javaSourceDependencies.size();
+        
+        URL[] scps = this.getJavaSourceClasspath();
+        int numArgs = numFiles+4;
+        
+        String javaSourcePath = null;
+        if ( scps.length > 0 ){
+            numArgs += 2;
+            sb = new StringBuilder();
+            for ( int i=0; i<scps.length; i++){
+                sb.append(new File(scps[i].getFile()).getPath());
+                if ( i < scps.length-1 ){
+                    sb.append(File.pathSeparator);
+                }
+            }
+            javaSourcePath = sb.toString();
+            
+        }
+        
+        if ( bootClassPath != null ){
+            numArgs+=2;
+        }
+        
+        if ( jvmVersion != null ){
+            numArgs +=2;
+        }
+       
+        String[] args = new String[numArgs];
         int i = 0;
         //args[i++] = "javac";
         args[i++] = "-classpath";
         args[i++] = classPath;
         args[i++] = "-d";
         args[i++] = this.destination();
+        if ( scps.length > 0 ){
+            args[i++] = "-sourcepath";
+            args[i++] = javaSourcePath;
+        }
+        if ( bootClassPath != null ){
+            args[i++] = "-bootclasspath";
+            args[i++] = bootClassPath;
+        }
+        if ( jvmVersion != null ){
+            args[i++] = "-target";
+            args[i++] = jvmVersion;
+        }
         
         for ( File dep : javaSourceDependencies ){
             args[i++] = dep.getPath();
         }
+        
+        
         compiler.run(System.in, System.out, System.err, args);
     }
+
+    @Override
+    public void setBootClasspath(String classpath) {
+        bootClassPath = classpath;
+        super.setBootClasspath(classpath); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    
+    
+    
     
     
     /**
@@ -351,6 +441,15 @@ public class MirahCompiler2 extends Mirahc {
     public void setCompileJavaSources(boolean compileJavaSources) {
         this.compileJavaSources = compileJavaSources;
     }
+
+    @Override
+    public void setJvmVersion(String version) {
+        jvmVersion = version;
+        super.setJvmVersion(version); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    
+    
     
     
     
