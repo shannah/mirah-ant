@@ -13,6 +13,7 @@ import com.sun.source.tree.TypeParameterTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePathScanner;
+import com.sun.tools.javac.api.JavacTool;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -202,8 +203,9 @@ public class JavaToMirahMirror {
      * @throws IOException 
      */
     private void generateMirahMirror(File javaSourceFile) throws IOException {
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        JavaCompiler compiler = JavacTool.create();//ToolProvider.getSystemJavaCompiler();
         MyFileObject[] fos = new MyFileObject[]{new MyFileObject(javaSourceFile)};
+        
         JavacTask task = (JavacTask) compiler.getTask(null, null, null, null, null, Arrays.asList(fos));
         Iterable<? extends CompilationUnitTree> asts = task.parse();
         final Stack<Set<String>> typeParams = new Stack<Set<String>>();

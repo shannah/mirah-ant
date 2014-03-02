@@ -44,8 +44,12 @@ public class MirahcTask extends Task {
         if ( javac != null ){
             classPath = javac.getClasspath();
             bootClassPath = javac.getBootclasspath();
-            javaSourcesPath = javac.getSourcepath();
-            dest = javac.getDestdir();
+            if ( javaSourcesPath == null ){
+                javaSourcesPath = javac.getSrcdir();
+            }
+            if ( dest == null ){
+                dest = javac.getDestdir();
+            }
             jvmVersion = javac.getTarget();
             
         }
@@ -72,9 +76,10 @@ public class MirahcTask extends Task {
             c.setDestination(getDest().toString());
         }
         if ( getJavaSourcesPath() != null ){
+            System.out.println("Java sources path is "+getJavaSourcesPath());
             c.setJavaSourceClasspath(getJavaSourcesPath().toString());
         }
-        
+        System.out.println("Dest dir is "+getDest().toString());
         c.setCompileJavaSources(isCompileJavaSources());
         
         if ( getJvmVersion() != null ){
@@ -85,7 +90,10 @@ public class MirahcTask extends Task {
             System.out.println("File "+f);
         }
         
-        c.compile(new String[]{javac.getSrcdir().toString()});
+        int res = c.compile(new String[]{javac.getSrcdir().toString()});
+        System.out.println("Compile res "+res);
+        
+        
         javac.execute();
         
             
