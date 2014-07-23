@@ -90,7 +90,9 @@ public class MirahcTask extends Task {
             System.out.println("File "+f);
         }
         
-        int res = c.compile(new String[]{javac.getSrcdir().toString()});
+        
+        
+        int res = c.compile(javac.getSrcdir().list());
         System.out.println("Compile res "+res);
         
         
