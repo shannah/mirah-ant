@@ -1,6 +1,6 @@
 #Mirahc Ant Task
 
-An ant task for the Mirah compiler.
+An ant task for the [Mirah](http://www.mirah.org/) compiler.  This task also includes features not available in the standard Mirah compiler.  Specifically this task compiles both Mirah and Java files (by wrapping the javac task), and supports two-way dependencies between the mirah and java code.
 
 ##License
 
@@ -13,14 +13,14 @@ Apache 2.0
 
 ##Installation
 
-1. Download [MirahAnt.jar](), [mirah.jar](), and [mirahc.jar]().  You will reference them in your `classpath` attribute of the `taskdef` tag.
+1. Download [MirahAnt.jar](https://github.com/shannah/mirah-ant/raw/master/dist/MirahAnt.jar), [mirah.jar](https://github.com/shannah/mirah-ant/raw/master/lib/mirah.jar), and [mirahc.jar](https://github.com/shannah/mirah-ant/raw/master/lib/mirahc.jar).  You will reference them in your `classpath` attribute of the `taskdef` tag.
 
 ##Usage
 
 1. Add the mirahc task to your build script.
 
 ~~~
-<taskdef name="mirahc" classpath="MirahAnt.jar:mirah.jar:mirahc.jar" classname="ca.weblite.mirah.ant.MirahcTask"/>
+<taskdef name="mirahc" classpath="paht/to/MirahAnt.jar:path/to/mirah.jar:path/to/mirahc.jar" classname="ca.weblite.mirah.ant.MirahcTask"/>
 ~~~
 
 2. Use the mirahc task in your build script.  E.g.
@@ -44,5 +44,12 @@ Apache 2.0
 
 I.e. It wraps a javac task call, draws off of the settings provided to `javac`.
 
+##Netbeans Plugin
 
+This task is used as part of the Mirah Netbeans Plugin.  If you want IDE integration for Mirah, you should check out that plugin.
+
+##Credits
+
+1. This ANT task developed and maintained by [Steve Hannah](http://sjhannah.com).
+2. Mirah (formerly Duby) created by [Charles Nutter](https://github.com/headius), and maintained by a small, but enthusiastic, team led by [ribrdb](https://github.com/ribrdb) and [baroquebobcat](https://github.com/baroquebobcat).
 
