@@ -11,6 +11,11 @@ Apache 2.0
 * Task can be used to compile .java and .mirah files in one swipe.
 * Supports two-way dependencies between Java and Mirah code.
 
+##Status
+
+Alpha - This seems to work on all of the inputs I have provided so far, but I haven't built anything in production with it yet (as of July 2014).  In addition, the Mirah language is still evolving, and many of its features haven't been documented.
+
+
 ##Installation
 
 1. Download [MirahAnt.jar](https://github.com/shannah/mirah-ant/raw/master/dist/MirahAnt.jar), [mirah.jar](https://github.com/shannah/mirah-ant/raw/master/lib/mirah.jar), and [mirahc.jar](https://github.com/shannah/mirah-ant/raw/master/lib/mirahc.jar).  You will reference them in your `classpath` attribute of the `taskdef` tag.
