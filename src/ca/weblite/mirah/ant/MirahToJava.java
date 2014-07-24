@@ -65,7 +65,7 @@ public class MirahToJava {
 
             @Override
             public void enterNode(Context cntxt, Node node, boolean bln) {
-                System.out.println(node);
+                //System.out.println(node);
                 if ( node instanceof Import ){
                     Import inode = (Import)node;
                     sb.append("\nimport ").append(inode.fullName().identifier()).append(";");
@@ -100,10 +100,10 @@ public class MirahToJava {
                 } else if ( node instanceof MethodDefinition ){
                     final MethodDefinition inode = (MethodDefinition)node;
                     int bodySize = inode.body_size();
-                    System.out.println("Body "+bodySize);
+                    //System.out.println("Body "+bodySize);
                     for ( int i=0; i<bodySize; i++){
                         Node n = inode.body(i);
-                        System.out.println("B:"+n);
+                        //System.out.println("B:"+n);
                     }
                     if ( inode.type() == null ){
                         final String placeHolder = "%%placeholder%%"+placeholders.size();
@@ -120,26 +120,26 @@ public class MirahToJava {
                                 String returnType = null;
                                 
                                 if ( mf.returnType().inferredType().isError() ){
-                                    System.out.println(mf.returnType().inferredType());
+                                    //System.out.println(mf.returnType().inferredType());
                                     //System.out.println("RT: "+mf.returnType());
                                     returnType = mf.returnType().inferredType().toString();
-                                    System.out.println("RT:"+returnType);
+                                    //System.out.println("RT:"+returnType);
                                     int idx = returnType.lastIndexOf(",");
                                     if ( idx != -1 ){
                                         returnType = returnType.substring(0, idx);
-                                        System.out.println("RT2:"+returnType);
+                                        //System.out.println("RT2:"+returnType);
                                     }
                                     idx = returnType.lastIndexOf(" ");
                                     if ( idx != -1 ){
                                         returnType = returnType.substring(idx+1);
-                                        System.out.println(returnType);
+                                        //System.out.println(returnType);
                                     }
                                 } else {
                                     returnType = mf.returnType().inferredType().name();
                                 }
-                                System.out.println("Type is now "+returnType);
+                                //System.out.println("Type is now "+returnType);
                                 String sttc = "";
-                                System.out.println("TR:"+inode);
+                                //System.out.println("TR:"+inode);
                                 if ( inode instanceof StaticMethodDefinition ){
                                     sttc = "static ";
                                 }
@@ -153,7 +153,7 @@ public class MirahToJava {
                     } else {
                         
                         String sttc = "";
-                        System.out.println("TR:"+inode);
+                        //System.out.println("TR:"+inode);
                         if ( inode instanceof StaticMethodDefinition ){
                             sttc = "static ";
                         }
@@ -169,7 +169,7 @@ public class MirahToJava {
             @Override
             public void inferenceError(Context cntxt, Node node, TypeFuture tf) {
                 //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-                System.out.println("Inference err on "+node);
+                //System.out.println("Inference err on "+node);
                 
             }
             

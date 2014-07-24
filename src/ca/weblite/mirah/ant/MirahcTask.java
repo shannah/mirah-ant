@@ -76,24 +76,24 @@ public class MirahcTask extends Task {
             c.setDestination(getDest().toString());
         }
         if ( getJavaSourcesPath() != null ){
-            System.out.println("Java sources path is "+getJavaSourcesPath());
+            //System.out.println("Java sources path is "+getJavaSourcesPath());
             c.setJavaSourceClasspath(getJavaSourcesPath().toString());
         }
-        System.out.println("Dest dir is "+getDest().toString());
+        //System.out.println("Dest dir is "+getDest().toString());
         c.setCompileJavaSources(isCompileJavaSources());
         
         if ( getJvmVersion() != null ){
             c.setJvmVersion(getJvmVersion());
         }
-        System.out.println("Files:");
+        //System.out.println("Files:");
         for ( File f : javac.getFileList() ){
-            System.out.println("File "+f);
+            //System.out.println("File "+f);
         }
         
         
         
         int res = c.compile(javac.getSrcdir().list());
-        System.out.println("Compile res "+res);
+        //System.out.println("Compile res "+res);
         
         
         javac.execute();

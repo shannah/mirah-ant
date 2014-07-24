@@ -235,7 +235,7 @@ public class JavaToMirah {
 
             @Override
             public Object visitLiteral(LiteralTree lt, Object p) {
-                System.out.println("Literal:" + lt);
+                //System.out.println("Literal:" + lt);
                 return super.visitLiteral(lt, p); //To change body of generated methods, choose Tools | Templates.
             }
 

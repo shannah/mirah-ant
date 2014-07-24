@@ -147,11 +147,11 @@ public class MirahCompiler2 extends Mirahc {
     }
     
     private void loadJavaSource(Context context, File f){
-        System.out.println("Inside loadJavaSource "+f);
+        //System.out.println("Inside loadJavaSource "+f);
         MirrorTypeSystem typeSystem = (MirrorTypeSystem)context.get(TypeSystem.class);
         if ( f.isDirectory() ){
             for ( File jf : f.listFiles(javaFileFilter) ){
-                System.out.println("Java file "+jf);
+                //System.out.println("Java file "+jf);
                 loadJavaSource(context, jf);
             }
         } else {
@@ -160,7 +160,7 @@ public class MirahCompiler2 extends Mirahc {
             // First let's check to make sure that the source has changed
             // since the last build.
             if ( isSourceChanged(f) && !javaSourceDependencies.contains(f)){
-                System.out.println("Loading "+f);
+                //System.out.println("Loading "+f);
                 javaSourceDependencies.add(f);
                 JavaToMirahMirror sourceLoader = new JavaToMirahMirror(context);
                 try {
@@ -331,7 +331,7 @@ public class MirahCompiler2 extends Mirahc {
         loadedIds.clear();
         installDebugger();
         int out = super.compile(args); 
-        System.out.println(javaSourceDependencies);
+        //System.out.println(javaSourceDependencies);
         if ( compileJavaSources ){
             compileJavaSources();
         }

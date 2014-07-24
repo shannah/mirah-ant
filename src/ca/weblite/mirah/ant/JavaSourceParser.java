@@ -57,7 +57,7 @@ public class JavaSourceParser extends ElementScanner7 {
          */
         @Override
         public Object visitType(final TypeElement e, Object p) {
-            System.out.println(e);
+            //System.out.println(e);
             Name className = e.getQualifiedName();
             int flags = 0;
             Type type = null;
