@@ -43,6 +43,7 @@ public class MirahcTask extends Task {
     private void processJointParameters(){
         if ( javac != null ){
             classPath = javac.getClasspath();
+            macroClassPath = javac.getClasspath();
             bootClassPath = javac.getBootclasspath();
             if ( javaSourcesPath == null ){
                 javaSourcesPath = javac.getSrcdir();

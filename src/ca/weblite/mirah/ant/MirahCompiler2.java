@@ -70,6 +70,7 @@ public class MirahCompiler2 extends Mirahc {
     
     
     public void setJavaSourceClasspath(String path){
+        
         if ( path == null || "".equals(path)){
             javaSourceClasspath = new URL[0];
             return;
