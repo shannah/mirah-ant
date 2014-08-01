@@ -55,6 +55,7 @@ public class MirahCompiler2 extends Mirahc {
     private boolean compileJavaSources = false;
     URL[] javaSourceClasspath = null;
     private String macroClasspath = null;
+    private String destination = null;
     
    
 
@@ -63,6 +64,15 @@ public class MirahCompiler2 extends Mirahc {
         super.setMacroClasspath(classpath); //To change body of generated methods, choose Tools | Templates.
         macroClasspath = classpath;
     }
+
+    @Override
+    public void setDestination(String dest) {
+        super.setDestination(dest); 
+        destination = dest;
+        
+    }
+    
+    
     
     
    
@@ -433,6 +443,12 @@ public class MirahCompiler2 extends Mirahc {
         
         
         int out = super.compile(args); 
+        
+        File macrosBootstrapOutput = new File(destination, "MacrosBootstrap.class");
+        if ( macrosBootstrapOutput.exists() ){
+            macrosBootstrapOutput.delete();
+        }
+        
         //System.out.println(javaSourceDependencies);
         if ( compileJavaSources ){
             compileJavaSources();
