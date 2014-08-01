@@ -7,11 +7,20 @@
 package ca.weblite.mirah.ant;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,6 +29,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import mirah.lang.ast.Import;
@@ -43,10 +54,18 @@ public class MirahCompiler2 extends Mirahc {
     private Set<String> loadedIds = new HashSet<>();
     private boolean compileJavaSources = false;
     URL[] javaSourceClasspath = null;
+    private String macroClasspath = null;
+    
+   
+
+    @Override
+    public void setMacroClasspath(String classpath) {
+        super.setMacroClasspath(classpath); //To change body of generated methods, choose Tools | Templates.
+        macroClasspath = classpath;
+    }
     
     
-    
-    
+   
     
     
     /**
@@ -84,6 +103,7 @@ public class MirahCompiler2 extends Mirahc {
                 Logger.getLogger(MirahCompiler2.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+        
     }
     
     public URL[] getJavaSourceClasspath(){
@@ -319,6 +339,8 @@ public class MirahCompiler2 extends Mirahc {
     @Override
     public int compile(String[] args) {
         List<String> filteredArgs = new ArrayList<String>();
+        //filteredArgs.add("--vmodule");
+        //filteredArgs.add("org.mirah.jvm.mirrors.BytecodeMirrorLoader=ALL");
         for ( int i=0; i<args.length; i++){
             if ( "--javac:sources".equals(args[i])){
                 this.setJavaSourceClasspath(args[i+1]);
@@ -327,10 +349,89 @@ public class MirahCompiler2 extends Mirahc {
                 filteredArgs.add(args[i]);
             }
         }
+        
         args = filteredArgs.toArray(new String[0]);
         javaSourceDependencies.clear();
         loadedIds.clear();
         installDebugger();
+        
+        
+        // Deal with macros in the macroclasspath
+        if ( macroClasspath != null ){
+            StringBuilder fakeFileContents = new StringBuilder();
+            String[] paths = macroClasspath.split(File.pathSeparator);
+            final PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:**/macros/Bootstrap.class");
+            final List<String> bootstrapClasses = new ArrayList<String>();
+            for ( final String path : paths ){
+                
+                final File file = new File(path);
+                if ( file.isDirectory() ){
+                    final Path root = file.toPath();
+                    Path p = file.toPath();
+                    try {
+                        Files.walkFileTree(p, new SimpleFileVisitor<Path>(){
+
+                            @Override
+                            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                                if ( matcher.matches(file)){
+                                    bootstrapClasses.add(root.relativize(file.getParent()).toFile().getPath().replaceAll(File.separator, "::"));
+
+                                }
+                                return super.visitFile(file, attrs);
+                            }
+
+                        });
+                    } catch (IOException ex) {
+                        Logger.getLogger(MirahCompiler2.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                } else if ( path.endsWith(".jar")){
+                    ZipInputStream zip = null;
+                    try {
+                        zip = new ZipInputStream(new FileInputStream(path));
+                        for(ZipEntry entry=zip.getNextEntry();entry!=null;entry=zip.getNextEntry())
+                            if(entry.getName().endsWith("macros/Bootstrap.class") && !entry.isDirectory()) {
+                                
+                                String[] parts = entry.getName().split("/");
+                                StringBuilder pkgName = new StringBuilder();
+                                for ( int i=0; i<parts.length-1; i++){
+                                    pkgName.append(parts[i]);
+                                    if ( i < parts.length-2 ){
+                                        pkgName.append("::");
+                                    }
+                                   
+                                }
+                                bootstrapClasses.add(pkgName.toString());
+                            }
+                    } catch (FileNotFoundException ex) {
+                        Logger.getLogger(MirahCompiler2.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (IOException ex) {
+                        Logger.getLogger(MirahCompiler2.class.getName()).log(Level.SEVERE, null, ex);
+                    } finally {
+                        try {
+                            zip.close();
+                        } catch (IOException ex) {
+                            Logger.getLogger(MirahCompiler2.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }
+                
+                
+                
+            }
+            
+            for ( String pkgName : bootstrapClasses ){
+                
+                fakeFileContents.append("\n")
+                        .append(pkgName)
+                        .append("::Bootstrap::loadExtensions");
+            }
+            
+            System.out.println("Adding fake file to load macros: ");
+            System.out.println(fakeFileContents.toString());
+            this.addFakeFile("MacrosBootstrap.mirah", fakeFileContents.toString());
+        }
+        
+        
         int out = super.compile(args); 
         //System.out.println(javaSourceDependencies);
         if ( compileJavaSources ){

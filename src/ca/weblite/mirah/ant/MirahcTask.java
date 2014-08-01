@@ -11,6 +11,7 @@ package ca.weblite.mirah.ant;
 // For example, for a plain Java project with no other dependencies, set in project.properties:
 // javac.classpath=${ant.core.lib}
 import java.io.File;
+import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tools.ant.BuildException;
@@ -25,13 +26,26 @@ public class MirahcTask extends Task {
     
     private Path classPath;
     private Path macroClassPath;
+    private Path macroJarDir;
     private Path bootClassPath;
     private File dest;
     private List<File> files = new ArrayList();
     private String jvmVersion;
     private Path javaSourcesPath;
+    
+    /**
+     * Indicates whether the Mirah compiler should run Javac on all
+     * java sources that the mirah files depend on.  Inside
+     * the ANT task we will usually have this disabled because we
+     * will be running the javac task that was provided afterwards.
+     */
     private boolean compileJavaSources = false;
     private Javac javac;
+    
+    /**
+     * Whether to run Javac after mirahc is complete.
+     */
+    private boolean postRunJavac=true;
     
     public void addConfiguredJavac(final Javac javac) {
         if ( javac != null ){
@@ -43,7 +57,7 @@ public class MirahcTask extends Task {
     private void processJointParameters(){
         if ( javac != null ){
             classPath = javac.getClasspath();
-            macroClassPath = javac.getClasspath();
+            //macroClassPath = javac.getClasspath();
             bootClassPath = javac.getBootclasspath();
             if ( javaSourcesPath == null ){
                 javaSourcesPath = javac.getSrcdir();
@@ -70,6 +84,32 @@ public class MirahcTask extends Task {
         if ( getClassPath() != null ){
             c.setClasspath(getClassPath().toString());
         }
+        
+        
+        // Add any jars in the macrojardir into the macroclasspath
+        if ( getMacroJarDir() != null ){
+            if (getMacroClassPath() == null){
+                macroClassPath = new Path(getProject());
+                
+            }
+            String[] paths = getMacroJarDir().list();
+            if ( paths.length > 0 ){
+                File jarDir = new File(paths[0]);
+                File[] jars = jarDir.listFiles(new FilenameFilter(){
+
+                    @Override
+                    public boolean accept(File dir, String name) {
+                        return name.endsWith(".jar");
+                    }
+                    
+                });
+                for ( File jar : jars ){
+                    macroClassPath.add(new Path(getProject(), jar.getAbsolutePath()));
+                }
+            }
+        }
+    
+        
         if ( getMacroClassPath() != null ){
             c.setMacroClasspath(getMacroClassPath().toString());
         }
@@ -87,17 +127,18 @@ public class MirahcTask extends Task {
             c.setJvmVersion(getJvmVersion());
         }
         //System.out.println("Files:");
-        for ( File f : javac.getFileList() ){
+        //for ( File f : javac.getFileList() ){
             //System.out.println("File "+f);
-        }
+        //}
         
         
         
         int res = c.compile(javac.getSrcdir().list());
         //System.out.println("Compile res "+res);
         
-        
-        javac.execute();
+        if ( postRunJavac ){
+            javac.execute();
+        }
         
             
         
@@ -208,6 +249,34 @@ public class MirahcTask extends Task {
      */
     public void setCompileJavaSources(boolean compileJavaSources) {
         this.compileJavaSources = compileJavaSources;
+    }
+
+    /**
+     * @return the postRunJavac
+     */
+    public boolean isPostRunJavac() {
+        return postRunJavac;
+    }
+
+    /**
+     * @param postRunJavac the postRunJavac to set
+     */
+    public void setPostRunJavac(boolean postRunJavac) {
+        this.postRunJavac = postRunJavac;
+    }
+
+    /**
+     * @return the macroJarDir
+     */
+    public Path getMacroJarDir() {
+        return macroJarDir;
+    }
+
+    /**
+     * @param macroJarDir the macroJarDir to set
+     */
+    public void setMacroJarDir(Path macroJarDir) {
+        this.macroJarDir = macroJarDir;
     }
     
     
