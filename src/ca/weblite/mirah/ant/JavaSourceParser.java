@@ -11,9 +11,11 @@ import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementScanner7;
 import javax.tools.JavaFileObject;
-import org.jruby.org.objectweb.asm.Opcodes;
-import org.jruby.org.objectweb.asm.Type;
+//import org.jruby.org.objectweb.asm.Opcodes;
+//import org.jruby.org.objectweb.asm.Type;
 import org.mirah.util.Context;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 /**
  *

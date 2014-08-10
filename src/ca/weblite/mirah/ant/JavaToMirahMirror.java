@@ -30,7 +30,7 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
-import org.jruby.org.objectweb.asm.Opcodes;
+//import org.jruby.org.objectweb.asm.Opcodes;
 import org.mirah.jvm.mirrors.AsyncMember;
 import org.mirah.jvm.mirrors.JVMScope;
 import org.mirah.jvm.mirrors.Member;
@@ -46,6 +46,7 @@ import org.mirah.typer.ResolvedType;
 import org.mirah.typer.TypeFuture;
 import org.mirah.typer.Typer;
 import org.mirah.util.Context;
+import org.objectweb.asm.Opcodes;
 
 /**
  * Converts Java Source files into MirahMirrors

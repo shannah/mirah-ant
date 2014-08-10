@@ -31,7 +31,7 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
-import org.jruby.org.objectweb.asm.Type;
+//import org.jruby.org.objectweb.asm.Type;
 import org.mirah.jvm.mirrors.MirahMirror;
 import org.mirah.typer.FuturePrinter;
 import org.mirah.typer.ResolvedType;
