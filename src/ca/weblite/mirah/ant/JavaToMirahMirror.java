@@ -392,8 +392,18 @@ public class JavaToMirahMirror {
                     TypeFuture tf = getType(type);
                     argTypes.add(tf);
                 }
-                String returnType = mt.getReturnType().toString();
-                TypeFuture returnTypeFuture = getType(formatType(returnType));
+                String returnType = null;
+                TypeFuture returnTypeFuture = null;
+                if ( mt.getReturnType() == null ){
+                    returnType = mirror.type().getClassName();
+                    
+                } else {
+                    returnType = mt.getReturnType().toString();
+                    
+                }
+                returnTypeFuture = getType(formatType(returnType));
+                //String returnType = mt.getReturnType().toString();
+                //TypeFuture returnTypeFuture = getType(formatType(returnType));
                 MemberKind kind = MemberKind.CONSTRUCTOR;                
                 Member member = new AsyncMember(flags, mirror, mt.getName().toString(), argTypes, returnTypeFuture, kind);
                 mirror.declareField(member);
