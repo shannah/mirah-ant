@@ -118,6 +118,7 @@ public class MirahcTask extends Task {
         }
         if ( getJavaSourcesPath() != null ){
             //System.out.println("Java sources path is "+getJavaSourcesPath());
+            
             c.setJavaSourceClasspath(getJavaSourcesPath().toString());
         }
         //System.out.println("Dest dir is "+getDest().toString());

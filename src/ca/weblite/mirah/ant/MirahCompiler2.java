@@ -178,11 +178,9 @@ public class MirahCompiler2 extends Mirahc {
     }
     
     private void loadJavaSource(Context context, File f){
-        //System.out.println("Inside loadJavaSource "+f);
         MirrorTypeSystem typeSystem = (MirrorTypeSystem)context.get(TypeSystem.class);
         if ( f.isDirectory() ){
             for ( File jf : f.listFiles(javaFileFilter) ){
-                //System.out.println("Java file "+jf);
                 loadJavaSource(context, jf);
             }
         } else {
@@ -191,7 +189,6 @@ public class MirahCompiler2 extends Mirahc {
             // First let's check to make sure that the source has changed
             // since the last build.
             if ( isSourceChanged(f) && !javaSourceDependencies.contains(f)){
-                //System.out.println("Loading "+f);
                 javaSourceDependencies.add(f);
                 JavaToMirahMirror sourceLoader = new JavaToMirahMirror(context);
                 try {
@@ -323,6 +320,7 @@ public class MirahCompiler2 extends Mirahc {
                 if ( node instanceof Import ){
                     Import inode = (Import)node;
                     String className = inode.fullName().identifier();
+                    
                     loadJavaSource(context, className);
                     
                 } else if ( node instanceof mirah.lang.ast.Package ){
@@ -436,8 +434,6 @@ public class MirahCompiler2 extends Mirahc {
                         .append("::Bootstrap::loadExtensions");
             }
             
-            System.out.println("Adding fake file to load macros: ");
-            System.out.println(fakeFileContents.toString());
             this.addFakeFile("MacrosBootstrap.mirah", fakeFileContents.toString());
         }
         
@@ -449,7 +445,6 @@ public class MirahCompiler2 extends Mirahc {
             macrosBootstrapOutput.delete();
         }
         
-        //System.out.println(javaSourceDependencies);
         if ( compileJavaSources ){
             compileJavaSources();
         }

@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
@@ -29,7 +31,6 @@ import javax.lang.model.element.Modifier;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
-import javax.tools.ToolProvider;
 //import org.jruby.org.objectweb.asm.Opcodes;
 import org.mirah.jvm.mirrors.AsyncMember;
 import org.mirah.jvm.mirrors.JVMScope;
@@ -43,6 +44,7 @@ import org.mirah.jvm.mirrors.MirrorTypeSystem;
 import org.mirah.jvm.types.MemberKind;
 import org.mirah.typer.AssignableTypeFuture;
 import org.mirah.typer.ResolvedType;
+import org.mirah.typer.Scoper;
 import org.mirah.typer.TypeFuture;
 import org.mirah.typer.Typer;
 import org.mirah.util.Context;
@@ -59,6 +61,9 @@ public class JavaToMirahMirror {
     private String currPackage = "";
     private Stack<MirahMirror> mirrorStack = new Stack<MirahMirror>();
     private JVMScope scope;
+    private JVMScope internalScope;
+    private Scoper scoper;
+    private LinkedList<String> namespaceStack = new LinkedList<String>();
 
     /**
      * Creates a new converter that is intended to add MirahMirrors into the 
@@ -69,8 +74,22 @@ public class JavaToMirahMirror {
     public JavaToMirahMirror(Context context) {
         mirahContext = context;
         typer = (Typer) context.get(Typer.class);
+        
         typeSystem = (MirrorTypeSystem) typer.type_system();
-        scope = new JVMScope(null);
+        scoper = (Scoper)context.get(Scoper.class);/*new SimpleScoper(new ScopeFactory(){
+
+            @Override
+            public Scope newScope(Scoper scoper, Node node) {
+                JVMScope scope = new JVMScope(scoper);
+                scope.context_set(node);
+                return scope;
+            }
+            
+        });*/
+               
+        scope = new JVMScope(scoper);
+        
+        
     }
     
    
@@ -196,6 +215,30 @@ public class JavaToMirahMirror {
 
     }
 
+    private String getCurrentNamespacePrefix(){
+        if ( namespaceStack.isEmpty() ){
+            return "";
+        }
+        
+        StringBuilder sb = new StringBuilder();
+        Iterator<String> it = namespaceStack.descendingIterator();
+        boolean first = true;
+        while ( it.hasNext()){
+            String part = it.next();
+            sb.append(part);
+            if ( first ){
+                first = false;
+                
+                sb.append(".");
+            } else {
+                sb.append("$");
+            }
+        }
+        return sb.toString();
+    }
+    
+    
+    
     /**
      * Generates the the mirah mirrors for a specific java source file.  This file
      * must be a .java file.  It cannot be a directory.
@@ -239,7 +282,7 @@ public class JavaToMirahMirror {
                 }
                 if (isGenericType(type)) {
                     return "Object";
-                }               
+                } 
                 return type;
             }
             
@@ -251,14 +294,26 @@ public class JavaToMirahMirror {
                     
                     return typeSystem.getArrayType(baseTypeFuture);
                 } else {
+                    TypeFuture tf = null;
+                
+                    if ( internalScope != null ){
+                        tf = typeSystem.loadWithScope(internalScope, type, null);
+                    }
                     
-                    return typeSystem.loadWithScope(scope, type, null);
+                    if ( tf == null || !tf.isResolved() ){
+                        return typeSystem.loadWithScope(scope, type, null);
+                    } else {
+                        return tf;
+                    }
                 }
             }
 
             @Override
             public Object visitCompilationUnit(CompilationUnitTree cut, Object p) {
+                
                 currPackage = cut.getPackageName().toString();
+                namespaceStack.clear();
+                namespaceStack.push(currPackage);
                 scope.package_set(currPackage);
                 typeSystem.addDefaultImports(scope);
                 return super.visitCompilationUnit(cut, p); //To change body of generated methods, choose Tools | Templates.
@@ -273,12 +328,15 @@ public class JavaToMirahMirror {
                 if ((pos = shortName.indexOf(".")) != -1) {
                     shortName = shortName.substring(pos + 1);
                 }
+                
                 scope.add_import(path, shortName);
                 return super.visitImport(it, p); //To change body of generated methods, choose Tools | Templates.
             }
 
+            
+            
             @Override
-            public Object visitClass(ClassTree ct, Object p) {                
+            public Object visitClass(ClassTree ct, Object p) {  
                 Set<String> generics = new HashSet<String>();
                 typeParams.push(generics);
                 for (TypeParameterTree tree : ct.getTypeParameters()) {
@@ -288,9 +346,9 @@ public class JavaToMirahMirror {
                     return ct;
                 }
                 String fullName = ct.getSimpleName().toString();
-                if (!"".equals(currPackage)) {
-                    fullName = currPackage + "." + fullName;
-                }
+                
+                fullName = getCurrentNamespacePrefix()+fullName;
+                
                 String superClass = "";
                 TypeFuture superClassType = null;
                 if (ct.getExtendsClause() != null) {
@@ -308,7 +366,12 @@ public class JavaToMirahMirror {
                     }
                 }
                 MirahMirror mirror = null;
-                TypeFuture newType = typeSystem.defineType(scope, null, ct.getSimpleName().toString(), superClassType, implTypes);
+                //String localName = ct.getSimpleName().toString();
+                //if ( namespaceStack.size() > 1 ){
+                //    localName = "JavaClass$"+localName;
+                //}
+                
+                TypeFuture newType = typeSystem.defineType(internalScope==null?scope:internalScope, null, ct.getSimpleName().toString(), superClassType, implTypes);
                 if (newType instanceof MirrorFuture) {
                     MirrorFuture mf = (MirrorFuture) newType;
                     ResolvedType rt = mf.inferredType();
@@ -326,13 +389,36 @@ public class JavaToMirahMirror {
                         case INTERFACE:
                             flags |= Opcodes.ACC_INTERFACE;
                             break;
+                            
+                        case ENUM:
+                            flags |= Opcodes.ACC_ENUM;
+                            break;
+                        
+                            
+                        
+                        
                     }
                     mirror.flags_set(flags);
                     mirrorStack.push(mirror);
-
+                    JVMScope oldInternal = internalScope;
+                    internalScope = new JVMScope(scoper);
+                    
+                    
+                    internalScope.selfType_set(newType);
+                    //scope.addChild(classScope);
+                    internalScope.parent_set(scope);
+                    
+                    //scope = classScope;
+                    
+                    namespaceStack.push(ct.getSimpleName().toString());
+                    
                     Object out = super.visitClass(ct, p);
+                    namespaceStack.pop();
+                    
+                    internalScope = oldInternal;
 
                     mirrorStack.pop();
+                    
                     return out;
                 } else {
                     return ct;
@@ -361,6 +447,7 @@ public class JavaToMirahMirror {
                             flags |= Opcodes.ACC_PROTECTED;
                             break;
                         case PUBLIC:
+                            
                             flags |= Opcodes.ACC_PUBLIC;
                             break;
                         case STATIC:
@@ -368,6 +455,7 @@ public class JavaToMirahMirror {
                             break;                            
                     }
                 }
+                
                 return flags;
             }
 
@@ -417,6 +505,7 @@ public class JavaToMirahMirror {
                     return visitConstructor(mt, p);
                 }
                 final MirahMirror mirror = mirrorStack.peek();
+                
                 int flags = getFlags(mt.getModifiers().getFlags());
                 List<TypeFuture> argTypes = new ArrayList<TypeFuture>();
                 for (VariableTree v : mt.getParameters()) {
@@ -427,9 +516,13 @@ public class JavaToMirahMirror {
                     atf.assign(tf, null);
                     argTypes.add(atf);
                 }
+                
                 String returnType = mt.getReturnType().toString();
                 TypeFuture returnTypeFuture = getType(formatType(returnType));
                 MemberKind kind = mt.getModifiers().getFlags().contains(Modifier.STATIC) ? MemberKind.STATIC_METHOD : MemberKind.METHOD;
+                
+                
+                
                 MirahMethod member = new MirahMethod(mirahContext, null, flags, mirror, mt.getName().toString(), argTypes, returnTypeFuture, kind);
                 mirror.add(member);
                 return mt;
