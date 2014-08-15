@@ -117,7 +117,7 @@ public class MirahcTask extends Task {
             c.setDestination(getDest().toString());
         }
         if ( getJavaSourcesPath() != null ){
-            //System.out.println("Java sources path is "+getJavaSourcesPath());
+            System.out.println("Java sources path is "+getJavaSourcesPath());
             
             c.setJavaSourceClasspath(getJavaSourcesPath().toString());
         }
@@ -125,6 +125,7 @@ public class MirahcTask extends Task {
         c.setCompileJavaSources(isCompileJavaSources());
         
         if ( getJvmVersion() != null ){
+            System.out.println("JVM Version is "+getJvmVersion());
             c.setJvmVersion(getJvmVersion());
         }
         //System.out.println("Files:");

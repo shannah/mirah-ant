@@ -9,6 +9,7 @@ import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ImportTree;
 import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.Tree.Kind;
 import com.sun.source.tree.TypeParameterTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.JavacTask;
@@ -44,8 +45,10 @@ import org.mirah.jvm.mirrors.MirrorTypeSystem;
 import org.mirah.jvm.types.MemberKind;
 import org.mirah.typer.AssignableTypeFuture;
 import org.mirah.typer.ResolvedType;
+import org.mirah.typer.Scope;
 import org.mirah.typer.Scoper;
 import org.mirah.typer.TypeFuture;
+import org.mirah.typer.TypeListener;
 import org.mirah.typer.Typer;
 import org.mirah.util.Context;
 import org.objectweb.asm.Opcodes;
@@ -231,7 +234,7 @@ public class JavaToMirahMirror {
                 
                 sb.append(".");
             } else {
-                sb.append("$");
+                sb.append(".");
             }
         }
         return sb.toString();
@@ -315,6 +318,7 @@ public class JavaToMirahMirror {
                 namespaceStack.clear();
                 namespaceStack.push(currPackage);
                 scope.package_set(currPackage);
+                internalScope = null;
                 typeSystem.addDefaultImports(scope);
                 return super.visitCompilationUnit(cut, p); //To change body of generated methods, choose Tools | Templates.
 
@@ -322,13 +326,14 @@ public class JavaToMirahMirror {
 
             @Override
             public Object visitImport(ImportTree it, Object p) {
+                //System.out.println("IN import "+it);
                 String path = it.getQualifiedIdentifier().toString();
                 String shortName = path;
                 int pos = -1;
-                if ((pos = shortName.indexOf(".")) != -1) {
+                if ((pos = shortName.lastIndexOf(".")) != -1) {
                     shortName = shortName.substring(pos + 1);
                 }
-                
+                //System.out.println("Adding import "+path+" name: "+shortName);
                 scope.add_import(path, shortName);
                 return super.visitImport(it, p); //To change body of generated methods, choose Tools | Templates.
             }
@@ -337,6 +342,7 @@ public class JavaToMirahMirror {
             
             @Override
             public Object visitClass(ClassTree ct, Object p) {  
+                //System.out.println("Visiting class "+ct);
                 Set<String> generics = new HashSet<String>();
                 typeParams.push(generics);
                 for (TypeParameterTree tree : ct.getTypeParameters()) {
@@ -370,8 +376,23 @@ public class JavaToMirahMirror {
                 //if ( namespaceStack.size() > 1 ){
                 //    localName = "JavaClass$"+localName;
                 //}
-                
-                TypeFuture newType = typeSystem.defineType(internalScope==null?scope:internalScope, null, ct.getSimpleName().toString(), superClassType, implTypes);
+                //System.out.println("Internal scope: "+internalScope);
+                int flags = getFlags(ct.getModifiers().getFlags());
+                switch (ct.getKind()) {
+                    case INTERFACE:
+                        flags |= Opcodes.ACC_INTERFACE;
+                        break;
+
+                    case ENUM:
+                        flags |= Opcodes.ACC_ENUM;
+                        break;
+
+                }
+                //System.out.println("Kind is "+ct.getKind());
+                //if ( internalScope != null ) System.out.println(internalScope.selfType());
+                Scope thisScope = (internalScope!=null && (ct.getKind() == Kind.ENUM || ct.getKind() == Kind.INTERFACE))?internalScope:scope;
+                String thisName = thisScope == scope ? fullName : ct.getSimpleName().toString();
+                TypeFuture newType = typeSystem.defineType(thisScope, null, thisName, superClassType, implTypes);
                 if (newType instanceof MirrorFuture) {
                     MirrorFuture mf = (MirrorFuture) newType;
                     ResolvedType rt = mf.inferredType();
@@ -384,20 +405,8 @@ public class JavaToMirahMirror {
                     }
                 }
                 if (mirror != null) {
-                    int flags = getFlags(ct.getModifiers().getFlags());
-                    switch (ct.getKind()) {
-                        case INTERFACE:
-                            flags |= Opcodes.ACC_INTERFACE;
-                            break;
-                            
-                        case ENUM:
-                            flags |= Opcodes.ACC_ENUM;
-                            break;
-                        
-                            
-                        
-                        
-                    }
+                    //System.out.println("Found mirror type: "+mirror);
+                    
                     mirror.flags_set(flags);
                     mirrorStack.push(mirror);
                     JVMScope oldInternal = internalScope;
@@ -411,7 +420,6 @@ public class JavaToMirahMirror {
                     //scope = classScope;
                     
                     namespaceStack.push(ct.getSimpleName().toString());
-                    
                     Object out = super.visitClass(ct, p);
                     namespaceStack.pop();
                     
@@ -461,9 +469,18 @@ public class JavaToMirahMirror {
 
             @Override
             public Object visitVariable(final VariableTree vt, Object p) {
+                //System.out.println("Visiting Variable "+vt);
                 final MirahMirror mirror = mirrorStack.peek();
                 String typeStr = vt.getType().toString();
                 TypeFuture type = getType(formatType(typeStr));
+                type.onUpdate(new TypeListener(){
+
+                    @Override
+                    public void updated(TypeFuture tf, ResolvedType rt) {
+                        //System.out.println("VART type for "+vt.getName()+" is "+rt.name());
+                    }
+                    
+                });
                 MemberKind kind = vt.getModifiers().getFlags().contains(Modifier.STATIC) ? MemberKind.STATIC_FIELD_ACCESS : MemberKind.FIELD_ACCESS;
                 int flags = getFlags(vt.getModifiers().getFlags());
                 Member member = new AsyncMember(flags, mirror, vt.getName().toString(), new ArrayList(), type, kind);
@@ -500,11 +517,13 @@ public class JavaToMirahMirror {
 
             @Override
             public Object visitMethod(final MethodTree mt, Object p) {
+                //System.out.println(mt);
                 if (mt.getReturnType() == null) {
                     // It's a constructor
                     return visitConstructor(mt, p);
                 }
                 final MirahMirror mirror = mirrorStack.peek();
+                
                 
                 int flags = getFlags(mt.getModifiers().getFlags());
                 List<TypeFuture> argTypes = new ArrayList<TypeFuture>();
@@ -518,7 +537,17 @@ public class JavaToMirahMirror {
                 }
                 
                 String returnType = mt.getReturnType().toString();
+                
                 TypeFuture returnTypeFuture = getType(formatType(returnType));
+                returnTypeFuture.onUpdate(new TypeListener(){
+
+                    @Override
+                    public void updated(TypeFuture tf, ResolvedType rt) {
+                        //System.out.println("Return type for "+mt.getName()+" is "+rt.name());
+                    }
+                    
+                });
+                //System.out.println("Name: "+mt.getName()+" return type "+returnTypeFuture.resolve());
                 MemberKind kind = mt.getModifiers().getFlags().contains(Modifier.STATIC) ? MemberKind.STATIC_METHOD : MemberKind.METHOD;
                 
                 

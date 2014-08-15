@@ -59,7 +59,7 @@ public class MirahCompiler2Test {
     public void testCompileInterface() {
         
         String mirahSrc = "package mypkg\n"
-                +" import static mypkg.JavaClass.*\n"
+                +" import mypkg.JavaClass.*\n"
                 +" class MirahClass < JavaClass \n"
                 +"    def initialize(jc:JavaClass)\n"
                 +"        @jc = jc\n"
@@ -204,12 +204,17 @@ public class MirahCompiler2Test {
         MirahCompiler2 compiler = new MirahCompiler2();
         compiler.setJavaSourceClasspath("./test_resources/src");
         
-        String src = "package ca.weblite.scriblets\n"
+        String src = "package mypkg\n"
+                
+                +"import ca.weblite.scriblets.models.Board\n"
                 + "import ca.weblite.scriblets.models.Board.*\n"
+                +"import ca.weblite.scriblets.models.Move\n"
                 + "class MyClass\n"
-                + " def hello\n"
+                + " def hello(move:Move)\n"
                 + "     dir = Direction.HORIZONTAL\n"
-                + "     puts dir\n"
+                + "     #board=Board.new(5,5)\n"
+                +"      tiles = move.getTilesUsed\n"
+                + "     #puts dir\n"
                 + " end\n"
                 + "end\n";
         compiler.addFakeFile("MyClass.mirah", src);

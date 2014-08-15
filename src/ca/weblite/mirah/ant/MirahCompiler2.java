@@ -201,6 +201,7 @@ public class MirahCompiler2 extends Mirahc {
     }
     private void loadJavaSource(Context context, String identifier){
         if ( !loadedIds.contains(identifier) ){
+            //System.out.println("Loading java source for "+identifier);
             loadedIds.add(identifier);
             MirrorTypeSystem typeSystem = (MirrorTypeSystem)context.get(TypeSystem.class);
             String idPath = identifier.replaceAll("\\.", "/");
@@ -250,6 +251,7 @@ public class MirahCompiler2 extends Mirahc {
                     } else {
                         File javaFile = new File(rootDir.getPath()+"/"+idPath+".java");
                         if ( javaFile.exists()){
+                            //System.out.println("Loading actual java file "+javaFile);
                             loadJavaSource(context, javaFile);
                         }
                     }
@@ -320,9 +322,9 @@ public class MirahCompiler2 extends Mirahc {
                 if ( node instanceof Import ){
                     Import inode = (Import)node;
                     String className = inode.fullName().identifier();
-                    
+                    //inode.
+                    //System.out.println("In import "+className);
                     loadJavaSource(context, className);
-                    
                 } else if ( node instanceof mirah.lang.ast.Package ){
                     
                     mirah.lang.ast.Package pnode = (mirah.lang.ast.Package)node;
