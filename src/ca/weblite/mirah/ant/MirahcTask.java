@@ -10,10 +10,14 @@ package ca.weblite.mirah.ant;
 // The easiest way to do this is to add ${ant.core.lib} to your project's classpath.
 // For example, for a plain Java project with no other dependencies, set in project.properties:
 // javac.classpath=${ant.core.lib}
+import ca.weblite.asm.WLMirahCompiler;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.taskdefs.Javac;
@@ -28,6 +32,16 @@ public class MirahcTask extends Task {
     private Path macroClassPath;
     private Path macroJarDir;
     private Path bootClassPath;
+    
+    /**
+     * Directory where java source files are precompiled to as stubs.
+     */
+    private File javaStubDir;
+    
+    /**
+     * Directory where mirah stubs are compiled to.
+     */
+    private File classCacheDir;
     private File dest;
     private List<File> files = new ArrayList();
     private String jvmVersion;
@@ -60,6 +74,7 @@ public class MirahcTask extends Task {
             //macroClassPath = javac.getClasspath();
             bootClassPath = javac.getBootclasspath();
             if ( javaSourcesPath == null ){
+                
                 javaSourcesPath = javac.getSrcdir();
             }
             if ( dest == null ){
@@ -75,14 +90,15 @@ public class MirahcTask extends Task {
     void execute() throws BuildException {
         processJointParameters();
         
-        MirahCompiler2 c = new MirahCompiler2();
+        //MirahCompiler2 c = new MirahCompiler2();
+        WLMirahCompiler c = new WLMirahCompiler();
         
         
         if ( getBootClassPath() != null ){
-            c.setBootClasspath(getBootClassPath().toString());
+            c.setBootClassPath(getBootClassPath().toString());
         }
         if ( getClassPath() != null ){
-            c.setClasspath(getClassPath().toString());
+            c.setClassPath(getClassPath().toString());
         }
         
         
@@ -111,32 +127,38 @@ public class MirahcTask extends Task {
     
         
         if ( getMacroClassPath() != null ){
-            c.setMacroClasspath(getMacroClassPath().toString());
+            c.setMacroClassPath(getMacroClassPath().toString());
         }
         if ( getDest() != null ){
-            c.setDestination(getDest().toString());
+            c.setDestinationDirectory(getDest());
         }
         if ( getJavaSourcesPath() != null ){
-            System.out.println("Java sources path is "+getJavaSourcesPath());
-            
-            c.setJavaSourceClasspath(getJavaSourcesPath().toString());
+            c.setSourcePath(getJavaSourcesPath().toString());
+        }
+        
+        if ( getClassCacheDir() != null ){
+            c.setClassCacheDirectory(getClassCacheDir());
+        }
+        
+        if ( getJavaStubDir() != null ){
+            c.setJavaStubDirectory(getJavaStubDir());
         }
         //System.out.println("Dest dir is "+getDest().toString());
-        c.setCompileJavaSources(isCompileJavaSources());
+       // c.setCompileJavaSources(isCompileJavaSources());
         
         if ( getJvmVersion() != null ){
-            System.out.println("JVM Version is "+getJvmVersion());
             c.setJvmVersion(getJvmVersion());
         }
         //System.out.println("Files:");
         //for ( File f : javac.getFileList() ){
             //System.out.println("File "+f);
         //}
-        
-        
-        
-        int res = c.compile(javac.getSrcdir().list());
-        //System.out.println("Compile res "+res);
+        try {
+            int res = c.compile(javac.getSrcdir().list());
+            //System.out.println("Compile res "+res);
+        } catch (IOException ex) {
+            throw new BuildException(ex);
+        }
         
         if ( postRunJavac ){
             javac.execute();
@@ -279,6 +301,34 @@ public class MirahcTask extends Task {
      */
     public void setMacroJarDir(Path macroJarDir) {
         this.macroJarDir = macroJarDir;
+    }
+
+    /**
+     * @return the javaStubDir
+     */
+    public File getJavaStubDir() {
+        return javaStubDir;
+    }
+
+    /**
+     * @param javaStubDir the javaStubDir to set
+     */
+    public void setJavaStubDir(File javaStubDir) {
+        this.javaStubDir = javaStubDir;
+    }
+
+    /**
+     * @return the classCacheDir
+     */
+    public File getClassCacheDir() {
+        return classCacheDir;
+    }
+
+    /**
+     * @param classCacheDir the classCacheDir to set
+     */
+    public void setClassCacheDir(File classCacheDir) {
+        this.classCacheDir = classCacheDir;
     }
     
     

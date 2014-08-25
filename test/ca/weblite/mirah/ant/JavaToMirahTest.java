@@ -40,7 +40,7 @@ public class JavaToMirahTest {
     }
     
     
-    @Test
+    //@Test
     public void testCircularDependency(){
         String javaSrc = "package mypkg;\n"
                 +"class JavaClass {\n"
@@ -63,7 +63,7 @@ public class JavaToMirahTest {
     }
     
     
-    @Test
+    //@Test
     public void testGenerics(){
         String javaSrc = "package mypkg;\n"
                 +"class JavaClass<T,V> {\n"
@@ -96,7 +96,7 @@ public class JavaToMirahTest {
     }
     
     
-    @Test
+    //@Test
     public void testStaticField(){
         String javaSrc = "package mypkg;\n"
                 +"class JavaClass<T,V> {\n"

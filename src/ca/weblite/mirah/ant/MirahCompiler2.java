@@ -6,6 +6,10 @@
 
 package ca.weblite.mirah.ant;
 
+import ca.weblite.asm.ASMClassLoader;
+import ca.weblite.asm.JavaExtendedStubCompiler;
+import ca.weblite.asm.JavaSourceClassLoader;
+import ca.weblite.asm.MirahClassLoader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -46,14 +50,20 @@ import org.mirah.util.Context;
  * A "better" Mirah compiler.  This supports circular dependencies between
  * .java files and .mirah files. 
  * @author shannah
+ * @deprecated
  */
 public class MirahCompiler2 extends Mirahc {
+    private ca.weblite.asm.Context stubCompilerContext;
     private String jvmVersion = null;
     private String bootClassPath = null;
+    private String classPath = null;
+    private String generatedStubPath = null;
+    private String bytecodeCachePath = null;
     private Set<File> javaSourceDependencies = new HashSet<>();
     private Set<String> loadedIds = new HashSet<>();
     private boolean compileJavaSources = false;
     URL[] javaSourceClasspath = null;
+    private String mirahSourcePath = null;
     private String macroClasspath = null;
     private String destination = null;
     
@@ -97,6 +107,55 @@ public class MirahCompiler2 extends Mirahc {
      */
     final private Map<String,String> fakeJavaSourceFiles = new HashMap<>();
     
+    JavaExtendedStubCompiler javaStubCompiler;
+    
+    public JavaExtendedStubCompiler getJavaStubCompiler(){
+        if ( javaStubCompiler == null ){
+            ca.weblite.asm.Context ctx = new ca.weblite.asm.Context();
+            stubCompilerContext = ctx;
+            ASMClassLoader asmLoader = new ASMClassLoader(ctx, null);
+            asmLoader.setPath(this.bootClassPath + this.classPath);
+            
+            ASMClassLoader javaCacheLoader = new ASMClassLoader(
+                    new ca.weblite.asm.Context(), 
+                    null
+            );
+            
+            if ( generatedStubPath == null ){
+                try {
+                    generatedStubPath = 
+                            Files.createTempDirectory("mirahbytecode").
+                                    toFile().getPath();
+                } catch (IOException ex) {
+                    Logger.getLogger(MirahCompiler2.class.getName()).
+                            log(Level.SEVERE, null, ex);
+                }
+            }
+            
+            javaCacheLoader.setPath(generatedStubPath);
+            
+            
+            JavaSourceClassLoader javaLoader = new JavaSourceClassLoader(
+                    ctx,
+                    asmLoader,
+                    javaCacheLoader
+            );
+            
+            javaLoader.setPath(getJavaSourceClasspathAsString());
+            
+            MirahClassLoader mirahLoader = new MirahClassLoader(
+                    ctx, 
+                    javaLoader
+            );
+            
+            mirahLoader.setPath(mirahSourcePath);
+            
+            javaStubCompiler = new JavaExtendedStubCompiler(ctx);
+            
+        }
+        return javaStubCompiler;
+    }
+    
     
     public void setJavaSourceClasspath(String path){
         
@@ -118,6 +177,15 @@ public class MirahCompiler2 extends Mirahc {
     
     public URL[] getJavaSourceClasspath(){
         return (javaSourceClasspath == null ) ? new URL[0] : javaSourceClasspath;
+    }
+    
+    public String getJavaSourceClasspathAsString(){
+        StringBuilder sb = new StringBuilder();
+        for ( URL u : getJavaSourceClasspath()){
+            sb.append(new File(u.getFile()).getPath()).
+                    append(File.pathSeparator);
+        }
+        return sb.length()>0?sb.substring(0, sb.length()-1):"";
     }
     
     /**
@@ -199,6 +267,16 @@ public class MirahCompiler2 extends Mirahc {
             }
         }
     }
+    
+    
+    
+    private void compileJavaStub(Context context, String identifier){
+        JavaExtendedStubCompiler compiler = this.getJavaStubCompiler();
+       
+    }
+            
+    
+    
     private void loadJavaSource(Context context, String identifier){
         if ( !loadedIds.contains(identifier) ){
             //System.out.println("Loading java source for "+identifier);
@@ -226,6 +304,7 @@ public class MirahCompiler2 extends Mirahc {
                         } finally {
                             fw.close();
                         }
+                        
                         
                         JavaToMirahMirror sourceLoader = new JavaToMirahMirror(context);
                         
@@ -527,6 +606,16 @@ public class MirahCompiler2 extends Mirahc {
         bootClassPath = classpath;
         super.setBootClasspath(classpath); //To change body of generated methods, choose Tools | Templates.
     }
+
+    @Override
+    public void setClasspath(String classPath) {
+        this.classPath = classPath;
+        super.setClasspath(classPath);
+    }
+    
+    public String getClasspath(){
+        return this.classPath;
+    }
     
     
     
@@ -564,6 +653,14 @@ public class MirahCompiler2 extends Mirahc {
     }
     
     
+    public void setMirahSourcePath(String path){
+        this.mirahSourcePath=path;
+    }
+    
+    public String getMirahSourcePath(){
+        return this.mirahSourcePath;
+                
+    }
     
     
     

@@ -102,7 +102,7 @@ public class JavaSourceParserTest {
 
     }
 
-    @Test
+    //@Test
     public void testSomeMethod() throws IOException {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         MyFileObject[] fos = new MyFileObject[]{new MyFileObject()};

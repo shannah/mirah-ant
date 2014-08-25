@@ -18,7 +18,7 @@ public class MirahCompiler2Test {
     public MirahCompiler2Test() {
     }
 
-    @Test
+    //@Test
     public void testCompile() {
         
         String mirahSrc = "package mypkg\n"
@@ -55,7 +55,7 @@ public class MirahCompiler2Test {
         compiler.compile(new String[0]);
     }
     
-    @Test
+    //@Test
     public void testCompileInterface() {
         
         String mirahSrc = "package mypkg\n"
@@ -106,7 +106,7 @@ public class MirahCompiler2Test {
         compiler.compile(new String[0]);
     }
     
-    @Test
+    //@Test
     public void testCompileEnum() {
         String mirahSrc = "package ca.weblite.scriblets\n"
                 +" import ca.weblite.scriblets.models.JavaClass3\n"
@@ -199,20 +199,20 @@ public class MirahCompiler2Test {
     }
     
     
-    @Test
+    //@Test
     public void testRealFiles(){
         MirahCompiler2 compiler = new MirahCompiler2();
         compiler.setJavaSourceClasspath("./test_resources/src");
         
         String src = "package mypkg\n"
-                
+                +"import ca.weblite.scriblets.models.Move\n"
                 +"import ca.weblite.scriblets.models.Board\n"
                 + "import ca.weblite.scriblets.models.Board.*\n"
-                +"import ca.weblite.scriblets.models.Move\n"
+                
                 + "class MyClass\n"
-                + " def hello(move:Move)\n"
+                + " def hello(move:Move, board:Board)\n"
                 + "     dir = Direction.HORIZONTAL\n"
-                + "     #board=Board.new(5,5)\n"
+                + "     board.getTile(5,5)\n"
                 +"      tiles = move.getTilesUsed\n"
                 + "     #puts dir\n"
                 + " end\n"
@@ -222,7 +222,7 @@ public class MirahCompiler2Test {
     }
     
     
-    @Test
+    //@Test
     public void testArrayParams() {
         
         String mirahSrc = "package mypkg\n"
@@ -270,7 +270,7 @@ public class MirahCompiler2Test {
     }
     
     
-    @Test
+    //@Test
     public void testSample1(){
         
         MirahCompiler2 compiler = new MirahCompiler2();
@@ -280,4 +280,5 @@ public class MirahCompiler2Test {
         compiler.setDestination("sample_src_dirs/sample1/build");
         compiler.compile(new String[]{"sample_src_dirs/sample1/src/mypkg/MirahClass.mirah"});
     }
+
 }
