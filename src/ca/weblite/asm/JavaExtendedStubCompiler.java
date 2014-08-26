@@ -297,7 +297,7 @@ public class JavaExtendedStubCompiler  {
                 } else {
                     methodDescriptor = 
                             Type.getMethodDescriptor(
-                                    null,
+                                    Type.getType("V"),
                                     argTypes.toArray(new Type[0])
                             );
                 }
@@ -343,6 +343,10 @@ public class JavaExtendedStubCompiler  {
                                     )
                             ));
                         } else {
+                            int arrowPos = type.indexOf("<");
+                            if ( arrowPos != -1 ){
+                                type = type.substring(0, arrowPos);
+                            }
                             ClassNode stub = scopeStack.peek().
                                     findStub(type);
                             if ( stub == null ){
@@ -378,6 +382,10 @@ public class JavaExtendedStubCompiler  {
 
 
                     } else {
+                        int arrowPos = returnType.indexOf("<");
+                        if ( arrowPos != -1 ){
+                            returnType = returnType.substring(0, arrowPos);
+                        }
                         ClassNode stub = scopeStack.peek().
                                 findStub(returnType);
                         if ( stub == null ){
@@ -387,6 +395,10 @@ public class JavaExtendedStubCompiler  {
                         }
                         
                         returnTypeType = Type.getObjectType(stub.name);
+                        returnTypeType = Type.getType(TypeUtil.getArrayDescriptor(
+                                returnTypeType.getInternalName(), 
+                                dim
+                        ));
 
                     }
 
