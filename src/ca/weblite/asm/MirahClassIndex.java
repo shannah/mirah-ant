@@ -9,6 +9,7 @@ package ca.weblite.asm;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -265,16 +266,15 @@ public class MirahClassIndex {
     
     
     private void readMtimes(File f) throws IOException{
-        if ( f.exists() ){
-            try (ObjectInputStream ois = 
-                    new ObjectInputStream(new FileInputStream(f))){
-                
-                mtimes = (Map<String,Long>)ois.readObject();
-            } catch (ClassNotFoundException ex) {
-                Logger.getLogger(MirahClassIndex.class.getName()).
-                        log(Level.SEVERE, null, ex);
-            }
+        try (ObjectInputStream ois = 
+                new ObjectInputStream(new FileInputStream(f))){
+
+            mtimes = (Map<String,Long>)ois.readObject();
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(MirahClassIndex.class.getName()).
+                    log(Level.SEVERE, null, ex);
         }
+        
     }
     
     private void writeMtimes(File f) throws IOException {
@@ -293,13 +293,20 @@ public class MirahClassIndex {
             }
             String[] parts = path.split(Pattern.quote(File.pathSeparator));
             File file = new File(parts[0], ".mirahindex");
-            if ( !file.exists()){
+            //if ( !file.exists()){
+            //    return false;
+            //}
+            try {
+                readIndex(file);
+            } catch (FileNotFoundException fnfe){
                 return false;
             }
-            readIndex(file);
-            File mFile = new File(parts[0], ".mirahmtimes");
-            if ( mFile.exists()){
+            try {
+                File mFile = new File(parts[0], ".mirahmtimes");
+                
                 readMtimes(mFile);
+            } catch ( FileNotFoundException fnfe){
+                
             }
             
             return true;
@@ -329,8 +336,12 @@ public class MirahClassIndex {
         String[] parts = path.split(Pattern.quote(File.pathSeparator));
         for ( String f : parts ){
             File file = new File(f);
-            if ( file.exists() && file.isDirectory()){
-                indexDirectory(file);
+            if ( !file.getName().endsWith(".jar")){
+                try {
+                    indexDirectory(file);
+                } catch (FileNotFoundException fnfe){
+                    
+                }
             }
         }
     }
@@ -343,13 +354,11 @@ public class MirahClassIndex {
         }
         String[] parts = path.split(Pattern.quote(File.pathSeparator));
         File file = new File(parts[0], ".mirahindex");
-        if ( file.exists()){
-            file.delete();
-        }
+        file.delete();
+        
         File mFile = new File(parts[0], ".mirahmtimes");
-        if ( mFile.exists()){
-            mFile.delete();
-        }
+        mFile.delete();
+       
 
 
     }

@@ -8,9 +8,14 @@ package ca.weblite.asm;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
@@ -32,9 +37,14 @@ public class ASMClassLoader extends BaseClassLoader {
     }
     
     private long lastModified;
+    private Map<String,JarFile> jarFileCache = new HashMap<>();
+    private Map<String,ClassNode> nodeCache = new HashMap<>();
+    private Set<String> blackFileList = new HashSet<>();
+    
 
     @Override
     public ClassNode findStub(Type type) {
+        
         return findClass(type);
     }
     
@@ -44,21 +54,15 @@ public class ASMClassLoader extends BaseClassLoader {
             String[] paths = path.split(Pattern.quote(File.pathSeparator));
             for ( String root : paths ){
                 File rootFile = new File(root);
-                if ( rootFile.isDirectory() ){
+                if ( rootFile.getName().endsWith(".jar")){
                     try {
-                        File f = new File(rootFile, file);
-                        if ( f.exists() ){
-                            lastModified = f.lastModified();
-                            return new FileInputStream(f);
+                        JarFile jarFile = null;
+                        if ( jarFileCache.containsKey(rootFile.getName())){
+                            jarFile = jarFileCache.get(rootFile.getName());
+                        } else {
+                            jarFile = new JarFile(rootFile);
+                            jarFileCache.put(rootFile.getName(), jarFile);
                         }
-                    } catch (IOException ex) {
-                        Logger.getLogger(ASMClassLoader.class.getName()).
-                                log(Level.SEVERE, null, ex);
-                    }
-                } else if ( rootFile.exists() &&
-                        rootFile.getName().endsWith(".jar")){
-                    try {
-                        JarFile jarFile = new JarFile(rootFile);
                         JarEntry entry = jarFile.getJarEntry(file);
                         
                         if ( entry != null ){
@@ -70,11 +74,28 @@ public class ASMClassLoader extends BaseClassLoader {
                     } catch (MalformedURLException ex) {
                         Logger.getLogger(ASMClassLoader.class.getName()).
                                 log(Level.SEVERE, null, ex);
+                    } catch (FileNotFoundException fnf){
+                        
                     } catch (IOException ex) {
                         Logger.getLogger(ASMClassLoader.class.getName()).
                                 log(Level.SEVERE, null, ex);
                     }
-                }
+                } else {//if ( rootFile.isDirectory() ){
+                    try {
+                        File f = new File(rootFile, file);
+                        if ( !blackFileList.contains(f.getPath()) && f.exists() ){
+                            lastModified = f.lastModified();
+                            return new FileInputStream(f);
+                        } else {
+                            blackFileList.add(f.getPath());
+                        }
+                    } catch ( FileNotFoundException fnfe){
+                        
+                    } catch (IOException ex) {
+                        Logger.getLogger(ASMClassLoader.class.getName()).
+                                log(Level.SEVERE, null, ex);
+                    }
+                } 
                 
             }
             return null;
@@ -85,6 +106,9 @@ public class ASMClassLoader extends BaseClassLoader {
     private ResourceLoader loader;
     
     public ClassNode findClass(Type type) {
+        if (nodeCache.containsKey(type.getInternalName())){
+            return nodeCache.get(type.getInternalName());
+        }
         String classFile = type.getInternalName()+".class";
         while (true){
             InputStream bytecode = loader.getResourceAsStream(classFile);
@@ -94,6 +118,7 @@ public class ASMClassLoader extends BaseClassLoader {
                     ClassReader reader = new ClassReader(bytecode);
                     reader.accept(node, ClassReader.SKIP_CODE);
                     if ( (node.name+".class").equals(classFile)){
+                        nodeCache.put(type.getInternalName(), node);
                         return node;
                     }
                 } catch (IOException ex) {

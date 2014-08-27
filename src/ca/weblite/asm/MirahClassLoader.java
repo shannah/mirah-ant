@@ -63,7 +63,7 @@ public class MirahClassLoader extends BaseClassLoader{
                 srcRoot = srcRoot.
                         split(Pattern.quote(File.pathSeparator))[0];
             }
-            File fakeRoot = new File(srcRoot, "_mirah_fake_files_cache");
+            File fakeRoot = new File(srcRoot, "._mirah_fake_files_cache");
             Map<String,String> toFlush = new HashMap<>();
             toFlush.put(path, contents);
             if ( !fakeFileQueue.isEmpty()){
@@ -73,9 +73,8 @@ public class MirahClassLoader extends BaseClassLoader{
             for ( Map.Entry<String,String> e : toFlush.entrySet() ){
                 File fakeFile = new File(fakeRoot, e.getKey());
                 File fakeFileParent = fakeFile.getParentFile();
-                if ( !fakeFileParent.exists()){
-                    fakeFileParent.mkdirs();
-                }
+                fakeFileParent.mkdirs();
+                
                 try (FileOutputStream fos = new FileOutputStream(fakeFile)){
                     PrintWriter out = new PrintWriter(fos, true);
                     out.printf(e.getValue());
@@ -95,7 +94,7 @@ public class MirahClassLoader extends BaseClassLoader{
                 srcRoot = srcRoot.
                         split(Pattern.quote(File.pathSeparator))[0];
             }
-            File fakeRoot = new File(srcRoot, "_mirah_fake_files_cache");
+            File fakeRoot = new File(srcRoot, "._mirah_fake_files_cache");
             if ( fakeRoot.exists()){
                 Path directory = fakeRoot.toPath();
                 Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
