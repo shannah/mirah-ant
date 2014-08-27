@@ -184,6 +184,7 @@ public class WLMirahCompiler {
             for ( String sourceDir : sourceDirs ){
                 javaStubCompiler.compileDirectory(
                         new File(sourceDir), 
+                        new File(sourceDir),
                         javaStubDirectory, 
                         true
                 );

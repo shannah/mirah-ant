@@ -149,20 +149,35 @@ public class JavaExtendedStubCompiler  {
         return types;
     }
     
-    public void compileFile(File sourceFile, File destinationDirectory) 
+    public void compileFile(File sourceFile, File sourceRoot, File destinationDirectory) 
             throws IOException {
+        String relativePath = sourceFile.getPath().substring(sourceRoot.getPath().length());
+        String relativeBase = relativePath;
+        int lastDot = relativePath.lastIndexOf(".");
+        if ( lastDot != -1 ){
+            relativeBase = relativeBase.substring(0, lastDot);
+        }
+        String relativeClassFilePath = relativeBase+".class";
+        File classFile = new File(destinationDirectory, relativeClassFilePath);
+        if ( classFile.lastModified() >= sourceFile.lastModified()){
+            // The class file hasn't been changed.
+            return;
+        }
         Map<String,byte[]> result = compile((List)null, sourceFile);
         for ( Map.Entry<String,byte[]> e : result.entrySet()){
             File output = new File(destinationDirectory, e.getKey()+".class");
-            output.getParentFile().mkdirs();
-            try (FileOutputStream fos = new FileOutputStream(output)){
-                fos.write(e.getValue());
+            if ( output.lastModified() < sourceFile.lastModified()){
+                output.getParentFile().mkdirs();
+                try (FileOutputStream fos = new FileOutputStream(output)){
+                    fos.write(e.getValue());
+                }
             }
         }
     }
     
     public void compileDirectory(
             File sourceDirectory,
+            File sourceRoot,
             File destinationDirectory,
             boolean recursive) 
             throws IOException{
@@ -172,13 +187,14 @@ public class JavaExtendedStubCompiler  {
                 //System.out.println("Path "+p);
                 if ( recursive && p.toFile().isDirectory() ){
                     compileDirectory(
-                            p.toFile(), 
+                            p.toFile(),
+                            sourceRoot,
                             destinationDirectory, 
                             recursive
                     );
                 } else if ( p.toFile().getName().endsWith(".java")){
                     //System.out.println("Compiling file "+p);
-                    compileFile(p.toFile(), destinationDirectory);
+                    compileFile(p.toFile(), sourceRoot, destinationDirectory);
                 }
             }
         } 

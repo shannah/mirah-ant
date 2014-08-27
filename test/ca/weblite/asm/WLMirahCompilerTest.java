@@ -78,7 +78,10 @@ public class WLMirahCompilerTest {
             "test/ca/weblite/asm/testcode/TestMirahClass.mirah"
         });
                 */
+        
+        long start = System.currentTimeMillis();
         compiler.compile(new String[]{"test"});
+        System.out.println("First compile took "+(System.currentTimeMillis()-start)+"ms");
         
         compiler = new WLMirahCompiler();
         try {
@@ -106,7 +109,29 @@ public class WLMirahCompilerTest {
             "test/ca/weblite/asm/testcode/TestMirahClass.mirah"
         });
                 */
+        
+        start = System.currentTimeMillis();
         compiler.compile(new String[]{"test"});
+        System.out.println("Second compile took "+(System.currentTimeMillis()-start)+"ms");
+        
+        compiler = new WLMirahCompiler();
+        compiler.setJavaStubDirectory(stubDir);
+        compiler.setSourcePath("test");
+        compiler.setClassCacheDirectory(cacheDir);
+        compiler.setDestinationDirectory(outputDir);
+        start = System.currentTimeMillis();
+        compiler.compile(new String[]{"test"});
+        System.out.println("Third compile took "+(System.currentTimeMillis()-start)+"ms");
+        
+        start = System.currentTimeMillis();
+        compiler.compile(new String[]{"test"});
+        System.out.println("Fourth compile took "+(System.currentTimeMillis()-start)+"ms");
+        
+        compiler.setPrecompileJavaStubs(false);
+        start = System.currentTimeMillis();
+        compiler.compile(new String[]{"test"});
+        System.out.println("Fifth compile (with no stub compilations) took "+(System.currentTimeMillis()-start)+"ms");
+        
         
     }
     
