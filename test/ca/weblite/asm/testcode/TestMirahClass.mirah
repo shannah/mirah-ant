@@ -8,5 +8,7 @@ class TestMirahClass
        iclass = InternalClass.new
        foo = ""
        foo = iclass.getHello
+
+       myint = TestJavaClass.testInt
     end
 end

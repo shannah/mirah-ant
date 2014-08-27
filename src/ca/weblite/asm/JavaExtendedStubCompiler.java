@@ -395,10 +395,12 @@ public class JavaExtendedStubCompiler  {
                         }
                         
                         returnTypeType = Type.getObjectType(stub.name);
-                        returnTypeType = Type.getType(TypeUtil.getArrayDescriptor(
-                                returnTypeType.getInternalName(), 
-                                dim
-                        ));
+                        returnTypeType = Type.getType(
+                                TypeUtil.getArrayDescriptor(
+                                    returnTypeType.getInternalName(), 
+                                    dim
+                            )
+                        );
 
                     }
 
@@ -429,6 +431,76 @@ public class JavaExtendedStubCompiler  {
                 }
                 return super.visitMethod(mt, p); 
             }
+
+            @Override
+            public Object visitVariable(VariableTree vt, Object p) {
+                
+                ClassWriter classWriter = cwStack.peek();
+
+
+
+                String varType = vt.getType().toString();
+                int dim = 0;
+
+                Type varTypeType = null;
+                if ( TypeUtil.isArrayType(varType)){
+                    dim = TypeUtil.getArrayTypeDimension(varType);
+                    varType = TypeUtil.getArrayElementType(varType); 
+
+                }
+                if ( TypeUtil.isPrimitiveType(varType)){
+                    String descriptor = 
+                            TypeUtil.getDescriptor(varType);
+                    varTypeType = Type.getType(
+                            TypeUtil.getArrayDescriptor(
+                                    descriptor, 
+                                    dim
+                            )
+                    );
+
+
+                } else {
+                    int arrowPos = varType.indexOf("<");
+                    if ( arrowPos != -1 ){
+                        varType = varType.substring(0, arrowPos);
+                    }
+                    ClassNode stub = scopeStack.peek().
+                            findStub(varType);
+                    if ( stub == null ){
+                        throw new RuntimeException(
+                                "Could not find class for "+varType
+                        );
+                    }
+
+                    varTypeType = Type.getObjectType(stub.name);
+                    varTypeType = Type.getType(
+                            TypeUtil.getArrayDescriptor(
+                                varTypeType.getInternalName(), 
+                                dim
+                        )
+                    );
+
+                }
+
+                
+                classWriter.visitField(
+                        getFlags(vt.getModifiers().getFlags()),
+                        vt.getName().toString(),
+                        varTypeType.toString(),
+                        null,
+                        null
+                );
+
+
+
+
+
+                
+                
+                return super.visitVariable(vt, p); //To change body of generated methods, choose Tools | Templates.
+            }
+            
+            
             
             /**
              * Converts modifier flags from Javac Tree into int flags usable in 
@@ -465,6 +537,8 @@ public class JavaExtendedStubCompiler  {
                 
                 return flags;
             }
+            
+            
             
             @Override
             public Object visitClass(ClassTree ct, Object p) {

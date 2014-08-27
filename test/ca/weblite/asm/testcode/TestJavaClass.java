@@ -11,6 +11,9 @@ package ca.weblite.asm.testcode;
  * @author shannah
  */
 public class TestJavaClass {
+    
+    public static int testInt=0;
+    
     public void start(){
         new TestMirahClass().hello();
     }
