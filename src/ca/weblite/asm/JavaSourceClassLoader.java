@@ -113,7 +113,7 @@ public class JavaSourceClassLoader extends BaseClassLoader {
                         ClassNode stub = stubCache.get(type.getInternalName());
                         if ( stub != null ){
                             stubCache.put(type.getInternalName(), stub);
-                            ClassWriter cw = new ClassWriter(1);
+                            ClassWriter cw = new ClassWriter(49);
                             String[] ifaces = null;
                             if ( stub.interfaces != null ){
                                 int len = stub.interfaces.size();

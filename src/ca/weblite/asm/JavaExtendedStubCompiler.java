@@ -193,7 +193,6 @@ public class JavaExtendedStubCompiler  {
                             recursive
                     );
                 } else if ( p.toFile().getName().endsWith(".java")){
-                    //System.out.println("Compiling file "+p);
                     compileFile(p.toFile(), sourceRoot, destinationDirectory);
                 }
             }
@@ -445,14 +444,18 @@ public class JavaExtendedStubCompiler  {
                     
                     
                 }
-                return super.visitMethod(mt, p); 
+                //methodStack.push(mt);
+                //Object out= super.visitMethod(mt, p); 
+                //methodStack.pop();
+                return null;
             }
-
+            //private boolean LinkedList<MethodTree> methodStack  =new LinkedList<>();
             @Override
             public Object visitVariable(VariableTree vt, Object p) {
                 
+                
                 ClassWriter classWriter = cwStack.peek();
-
+                
 
 
                 String varType = vt.getType().toString();
@@ -619,9 +622,9 @@ public class JavaExtendedStubCompiler  {
 
                 }
 
-                ClassWriter classWriter = new ClassWriter(1);
+                ClassWriter classWriter = new ClassWriter(49);
                 classWriter.visit(
-                        1,
+                        49,
                         flags,
                         internalName,
                         null,
