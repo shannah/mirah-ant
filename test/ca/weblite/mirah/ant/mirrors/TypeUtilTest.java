@@ -6,6 +6,9 @@
 
 package ca.weblite.mirah.ant.mirrors;
 
+import ca.weblite.asm.ASMClassLoader;
+import ca.weblite.asm.ClassFinder;
+import ca.weblite.asm.Context;
 import java.util.Map;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -40,6 +43,94 @@ public class TypeUtilTest {
     }
 
     
+    @Test
+    public void testSignature(){
+        ASMClassLoader loader = new ASMClassLoader(new Context(), null);
+        loader.setPath(System.getProperty("sun.boot.class.path"));
+        ClassFinder classFinder = new ClassFinder(loader,null);
+        
+        String type = "Object";
+        String sig = TypeUtil.getTypeSignature(type, classFinder);
+        assertEquals(
+                "Failed to get signature for Object", 
+                "Ljava/lang/Object;", 
+                sig
+        );
+        
+        classFinder.addImport("java.util.*");
+        
+        type = "List<Object>";
+        sig = TypeUtil.getTypeSignature(type, classFinder);
+        assertEquals(
+                "Failed to get signature for List<Object>",
+                "Ljava/util/List<Ljava/lang/Object;>;",
+                sig
+        );
+        
+        type = "Map<String,List>";
+        sig = TypeUtil.getTypeSignature(type, classFinder);
+        assertEquals(
+                "Failed to get signature for Map<String,List>",
+                "Ljava/util/Map<Ljava/lang/String;Ljava/util/List;>;",
+                sig
+        );
+        
+        type = "Map<String, List>";
+        sig = TypeUtil.getTypeSignature(type, classFinder);
+        assertEquals(
+                "Failed to get signature for Map<String, List> (with spaces)",
+                "Ljava/util/Map<Ljava/lang/String;Ljava/util/List;>;",
+                sig
+        );
+        
+        type = "Map<String, List>[]";
+        sig = TypeUtil.getTypeSignature(type, classFinder);
+        assertEquals(
+                "Failed to get signature for Map<String, List>[] (with spaces)",
+                "[Ljava/util/Map<Ljava/lang/String;Ljava/util/List;>;",
+                sig
+        );
+        
+        type = "Map<String[], List>[]";
+        sig = TypeUtil.getTypeSignature(type, classFinder);
+        assertEquals(
+                "Failed to get signature for Map<String[], List>[] (with spaces)",
+                "[Ljava/util/Map<[Ljava/lang/String;Ljava/util/List;>;",
+                sig
+        );
+        
+        type = "Map<byte[], List>[]";
+        sig = TypeUtil.getTypeSignature(type, classFinder);
+        assertEquals(
+                "Failed to get signature for Map<byte[], List>[] (with spaces)",
+                "[Ljava/util/Map<[BLjava/util/List;>;",
+                sig
+        );
+        
+        
+        sig = TypeUtil.getMethodSignature(classFinder, "void");
+        assertEquals(
+                "Failed to get void method signature",
+                "()V",
+                sig
+        );
+        sig = TypeUtil.getMethodSignature(classFinder, "List<Object>");
+        assertEquals(
+                "Failed to get method signature for List<Object>)",
+                "()Ljava/util/List<Ljava/lang/Object;>;",
+                sig
+        );
+        
+        sig = TypeUtil.getMethodSignature(classFinder, "List<Object>", "List<Object>");
+        assertEquals(
+                "Failed to get method signature for List<Object>)",
+                "(Ljava/util/List<Ljava/lang/Object;>;)Ljava/util/List<Ljava/lang/Object;>;",
+                sig
+        );
+        
+        
+        
+    }
 
     /**
      * Test of isPrimitiveType method, of class TypeUtil.

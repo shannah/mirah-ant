@@ -31,6 +31,7 @@ public class ClassFinder {
     Map<String,ClassNode> classCache = new HashMap<>();
     Map<String,ClassNode> stubCache = new HashMap<>();
     
+    
     private class SearchPath {
         String path;
         int order;

@@ -189,7 +189,7 @@ public class JavaExtendedStubCompilerTest {
         File testOut = new File("test_stubs");
         testOut.mkdirs();
         
-        compiler.compileDirectory(new File("test"), testOut, true);
+        compiler.compileDirectory(new File("test"), new File("test"), testOut, true);
     }
     
 }

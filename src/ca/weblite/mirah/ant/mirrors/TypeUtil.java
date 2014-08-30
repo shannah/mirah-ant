@@ -6,11 +6,16 @@
 
 package ca.weblite.mirah.ant.mirrors;
 
+import ca.weblite.asm.ClassFinder;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import javax.lang.model.element.Modifier;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.ClassNode;
 
 /**
  *
@@ -62,6 +67,94 @@ public class TypeUtil {
     }
     
     
+    public static String getMethodSignature(ClassFinder scope, String returnType, String ... argTypes){
+        StringBuilder sb = new StringBuilder();
+        sb.append("(");
+        for ( String argType : argTypes ){
+            sb.append(getTypeSignature(argType, scope));
+        }
+        sb.append(")");
+        sb.append(getTypeSignature(returnType, scope));
+        return sb.toString();
+    }
+    
+    public static String getTypeSignature(String type, ClassFinder scope){
+        System.out.println("Getting sig for type "+type);
+        if ( isArrayType(type)){
+            int dim = getArrayTypeDimension(type);
+            String elType = getArrayElementType(type);
+            String elSig = getTypeSignature(elType, scope);
+            StringBuilder sb = new StringBuilder();
+            for ( int i=0; i<dim; i++){
+                sb.append("[");
+            }
+            sb.append(elSig);
+            return sb.toString();
+        } else if ( isPrimitiveType(type)){
+            return getDescriptor(type);
+        } else {
+            String fullType = type;
+            String[] generics=null;
+           
+            int lePos = type.indexOf("<");
+            if ( lePos != -1 ){
+                type = type.substring(0, lePos);
+                String genericsStr = fullType.substring(lePos+1, fullType.lastIndexOf(">"));
+                System.out.println("Generics string "+genericsStr);
+                List<String> g = new ArrayList<>();
+                char c;
+                int pos=0;
+                int l1=0;
+                int l2=0;
+                char[] chars = genericsStr.toCharArray();
+                int len = chars.length;
+                int mark=0;
+                while ( pos < len ){
+                    c = chars[pos];
+                    switch (c){
+                        case '<': l1++;break;
+                        case '>': l1--;break;
+                        case '[': l2++;break;
+                        case ']': l2--;break;
+                        case ',':
+                            if ( l1==0 ){
+                                g.add(genericsStr.substring(mark, pos).trim());
+                                mark=pos+1;
+                            }
+                    }
+                    
+                    pos++;
+                }
+                
+                g.add(genericsStr.substring(mark, pos).trim());
+                System.out.println(g);
+                generics = g.toArray(new String[0]);
+                
+            }
+            
+            ClassNode baseNode = scope.findClass(type);
+            if ( baseNode == null ){
+                throw new RuntimeException("Could not find class "+type);
+            }
+            
+            StringBuilder sb = new StringBuilder();
+            sb.append("L")
+                    .append(baseNode.name);
+            if ( generics != null ){
+                sb.append("<");
+                for ( String g : generics ){
+                    sb.append(getTypeSignature(g, scope));
+                }
+                sb.append(">");
+            }
+            sb.append(";");
+            System.out.println("out "+sb);
+            return sb.toString();
+                
+        }
+        
+    }
+    
     /**
      * Gets the descriptor for a specified internal type.
      * @param internalName The internal name of the type.  E.g. java/lang/Object
@@ -107,7 +200,7 @@ public class TypeUtil {
      * @return 
      */
     public static int getArrayTypeDimension(String type){
-        String parts[] = type.split("\\[");
+        String parts[] = type.replaceAll("<[^>]*>", "").split("\\[");
         return parts.length-1;
     }
     
@@ -120,7 +213,9 @@ public class TypeUtil {
         if ( !isArrayType(type)){
             return null;
         } else {
-            return type.substring(0, type.indexOf("["));
+            int lePos = type.lastIndexOf(">");
+            if ( lePos<0 ) lePos = 0;
+            return type.substring(0, type.indexOf("[", lePos));
         }
     }
     

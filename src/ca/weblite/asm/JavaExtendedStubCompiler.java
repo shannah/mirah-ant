@@ -283,8 +283,19 @@ public class JavaExtendedStubCompiler  {
                 ClassWriter classWriter = cwStack.peek();
                 List<Type> argTypes = new ArrayList<Type>();
                 for (VariableTree v : mt.getParameters()) {  
-
+                    
+                    
                     String type = v.getType().toString();
+                    String fullType = type;
+                    String signature = null;
+                    try {
+                        signature = TypeUtil.getTypeSignature(type, scopeStack.peek());
+                    } catch ( Throwable t){
+                        System.out.println("Failed to find signature for type");
+                    }
+                    if ( type.indexOf("<") != -1 ){
+                        type = type.substring(0, type.indexOf("<"));
+                    }
                     int dim = 0;
                     if ( TypeUtil.isArrayType(type)){
                         dim = TypeUtil.getArrayTypeDimension(type);
@@ -306,6 +317,7 @@ public class JavaExtendedStubCompiler  {
                 }
 
                 String methodDescriptor = null;
+                String methodSignature = null;
                 if ( argTypes.isEmpty()){
                     methodDescriptor = 
                             Type.getMethodDescriptor(Type.getType("V"));
@@ -315,6 +327,8 @@ public class JavaExtendedStubCompiler  {
                                     Type.getType("V"),
                                     argTypes.toArray(new Type[0])
                             );
+                    
+                    
                 }
 
 
@@ -340,9 +354,11 @@ public class JavaExtendedStubCompiler  {
                     
 
                     List<Type> argTypes = new ArrayList<>();
+                    List<String> sigArgTypes = new ArrayList<>();
                     for (VariableTree v : mt.getParameters()) {  
 
                         String type = v.getType().toString();
+                        sigArgTypes.add(type);
                         int dim = 0;
                         if ( TypeUtil.isArrayType(type)){
                             dim = TypeUtil.getArrayTypeDimension(type);
@@ -377,6 +393,12 @@ public class JavaExtendedStubCompiler  {
                     }
 
                     String returnType = mt.getReturnType().toString();
+                    String methodSignature = null;
+                    try {
+                        methodSignature = TypeUtil.getMethodSignature(scopeStack.peek(), returnType, sigArgTypes.toArray(new String[0]));
+                    } catch ( Exception ex){
+                        System.out.println("Failed to get signature for method "+mt);
+                    }
                     int dim = 0;
 
                     Type returnTypeType = null;
@@ -437,7 +459,7 @@ public class JavaExtendedStubCompiler  {
                             getFlags(mt.getModifiers().getFlags()),
                             mt.getName().toString(),
                             methodDescriptor,
-                            null,
+                            methodSignature,
                             null
                     );
                     
