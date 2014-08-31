@@ -148,10 +148,31 @@ public class JavaExtendedStubCompilerTest {
         );
         
         
-        
-        
+        result = compiler.compile(
+                Type.getObjectType("ca/weblite/asm/SampleJavaClassExtendsGeneric"),
+                new File("test/ca/weblite/asm/SampleJavaClassExtendsGeneric.java")
+        );
             
+        assertTrue(
+                "Compiler result should not be null",
+                result!=null
+        );
         
+        node = new ClassNode();
+        reader = new ClassReader(result);
+        reader.accept(node, ClassReader.SKIP_CODE);
+        
+        assertEquals(
+                "Signature is incorrect",
+                "Ljava/util/ArrayList<Lca/weblite/asm/SampleJavaClass;>;",
+                node.signature
+        );
+        
+        ClassNode arrayList = classLoader.findStub(Type.getObjectType("java/util/ArrayList"));
+        System.out.println("Arraylist signature is "+arrayList.signature);
+        
+        ClassNode attributeList = classLoader.findStub(Type.getObjectType("javax/management/AttributeList"));
+        System.out.println("AttributeList signature is "+attributeList.signature);
     }
     
     @Test 
@@ -188,8 +209,9 @@ public class JavaExtendedStubCompilerTest {
     
         File testOut = new File("test_stubs");
         testOut.mkdirs();
-        
+        System.out.println("About to compile directory ");
         compiler.compileDirectory(new File("test"), new File("test"), testOut, true);
+        System.out.println("Directory compiled");
     }
     
 }

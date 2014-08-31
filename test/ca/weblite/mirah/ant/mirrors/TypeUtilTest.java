@@ -9,6 +9,7 @@ package ca.weblite.mirah.ant.mirrors;
 import ca.weblite.asm.ASMClassLoader;
 import ca.weblite.asm.ClassFinder;
 import ca.weblite.asm.Context;
+import java.util.Arrays;
 import java.util.Map;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -128,6 +129,29 @@ public class TypeUtilTest {
                 sig
         );
         
+        sig = TypeUtil.getClassSignature(
+                classFinder, 
+                Arrays.asList(new String[]{"T"}),
+                "ArrayList<T>",
+                "List<T>"
+        );
+        assertEquals(
+                "Failed to get class signature for MyClass<T> extends ArrayList<T>",
+                "<T:Ljava/lang/Object;>Ljava/util/ArrayList<TT;>;Ljava/util/List<TT;>;",
+                sig
+        );
+        
+        sig = TypeUtil.getClassSignature(
+                classFinder, 
+                null,
+                "ArrayList<Map>",
+                "List<Map>"
+        );
+        assertEquals(
+                "Failed to get class signature for MyClass<T> extends ArrayList<T>",
+                "Ljava/util/ArrayList<Ljava/util/Map;>;Ljava/util/List<Ljava/util/Map;>;",
+                sig
+        );
         
         
     }

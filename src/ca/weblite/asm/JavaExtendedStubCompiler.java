@@ -206,7 +206,6 @@ public class JavaExtendedStubCompiler  {
     
     public Map<String,byte[]> compile(List<Type> types, File sourceFile) 
             throws IOException {
-        //System.out.println("Compiling "+types+" in file "+sourceFile);
         final Map<String,byte[]> outMap  = new HashMap<>();
         final Set<String> typeNames = (types == null) ? 
                 null : 
@@ -481,6 +480,12 @@ public class JavaExtendedStubCompiler  {
 
 
                 String varType = vt.getType().toString();
+                String signature = null;
+                try {
+                    signature = TypeUtil.getTypeSignature(varType, scopeStack.peek());
+                } catch ( Exception ex){
+                    System.out.println("Failed to generate signature for type "+varType);
+                }
                 int dim = 0;
 
                 Type varTypeType = null;
@@ -528,7 +533,7 @@ public class JavaExtendedStubCompiler  {
                         getFlags(vt.getModifiers().getFlags()),
                         vt.getName().toString(),
                         varTypeType.toString(),
-                        null,
+                        signature,
                         null
                 );
 
@@ -583,6 +588,7 @@ public class JavaExtendedStubCompiler  {
             
             @Override
             public Object visitClass(ClassTree ct, Object p) {
+                
                 String simpleName = ct.getSimpleName().toString();
                 String internalName = getThisInternalName(simpleName);
                 int lastDollar = internalName.lastIndexOf("$");
@@ -607,6 +613,9 @@ public class JavaExtendedStubCompiler  {
                 if ( ct.getExtendsClause() != null ){
                     supername = ct.getExtendsClause().toString().trim();
                 }
+                String unresolvedSuperName = supername;
+                
+                
                 int bracketPos = supername.indexOf("<");
                 supername = bracketPos==-1 ?
                         supername:
@@ -620,18 +629,22 @@ public class JavaExtendedStubCompiler  {
                 supername = node.name;
 
                 String impl = ct.getImplementsClause().toString();
-
+                String[] unresolvedInterfaces = null;
                 if (!"".equals(impl)) {
                     interfaces = impl.split(",");
+                    unresolvedInterfaces = new String[interfaces.length];
                     for ( int i=0; i<interfaces.length; i++){
+                        
                         String iface = interfaces[i];
+                        unresolvedInterfaces[i] = interfaces[i];
                         iface = iface.trim();                        
                         ClassNode inode = scopeStack.peek().findStub(iface);
                         assert inode != null;
                         interfaces[i] = inode.name;
                     }
                 }
-
+                String signature = TypeUtil.getClassSignature(
+                        scopeStack.peek(), null, unresolvedSuperName, unresolvedInterfaces);
                 int flags = getFlags(ct.getModifiers().getFlags());
                 switch (ct.getKind()) {
                     case INTERFACE:
@@ -649,7 +662,7 @@ public class JavaExtendedStubCompiler  {
                         49,
                         flags,
                         internalName,
-                        null,
+                        signature,
                         supername,
                         interfaces
 

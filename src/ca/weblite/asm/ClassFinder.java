@@ -7,9 +7,12 @@
 package ca.weblite.asm;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
@@ -30,7 +33,7 @@ public class ClassFinder {
     Map<String,String> vars = new HashMap<>();
     Map<String,ClassNode> classCache = new HashMap<>();
     Map<String,ClassNode> stubCache = new HashMap<>();
-    
+    Set<String> typeParameters = new HashSet<>();
     
     private class SearchPath {
         String path;
@@ -47,6 +50,8 @@ public class ClassFinder {
         
         
     }
+    
+    
     
     private SearchPath searchPath(String path, int order){
         SearchPath p = new SearchPath();
@@ -95,7 +100,7 @@ public class ClassFinder {
             return classCache.get(name);
         }
         
-        while ( true ){
+        while ( loader != null &&  true ){
             Type type = Type.getObjectType(name);
             ClassNode node = loader.findClass(Type.getObjectType(name));
             if ( node != null ){
@@ -122,7 +127,7 @@ public class ClassFinder {
             return stubCache.get(name);
         }
         
-        while ( true ){
+        while ( loader != null &&  true ){
             ClassNode node = loader.findStub(Type.getObjectType(name));
             if ( node != null ){
                 stubCache.put(origName, node);
@@ -137,6 +142,28 @@ public class ClassFinder {
         return null;
             
     }
+    
+    public boolean isTypeParameter(String name){
+        return typeParameters.contains(name);
+    }
+    
+    public void addTypeParameter(String type){
+        typeParameters.add(type);
+    }
+    
+    public void removeTypeParameter(String type){
+        typeParameters.remove(type);
+    }
+    
+    public Set<String> getTypeParameters(){
+        return Collections.unmodifiableSet(typeParameters);
+    }
+    
+    public void clearTypeParameters(){
+        typeParameters.clear();
+    }
+    
+    
     
     public ClassNode findClass(String name){
         if ( classCache.containsKey(name)){

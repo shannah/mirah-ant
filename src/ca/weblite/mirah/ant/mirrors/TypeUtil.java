@@ -8,6 +8,7 @@ package ca.weblite.mirah.ant.mirrors;
 
 import ca.weblite.asm.ClassFinder;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,8 +79,37 @@ public class TypeUtil {
         return sb.toString();
     }
     
+    public static String getClassSignature(ClassFinder scope, Collection<String> typeParameters, String superType, String... interfaces){
+        
+        ClassFinder newScope = new ClassFinder(null, scope);
+        
+        StringBuilder sb = new StringBuilder();
+        if ( typeParameters != null && !typeParameters.isEmpty()){
+            sb.append("<");
+            for ( String param : typeParameters ){
+                String[] parts = param.split(" extends ");
+                String boundType = "java.lang.Object";
+                if ( parts.length > 1 ){
+                    boundType= parts[1].trim().split(" ")[0];
+                }
+                parts[0] = parts[0].trim();
+                sb.append(parts[0]).append(":").append(getTypeSignature(boundType, scope));
+                newScope.addTypeParameter(parts[0]);
+                
+            }
+            sb.append(">");
+        }
+        sb.append(getTypeSignature(superType, newScope));
+        if ( interfaces != null && interfaces.length > 0 ){
+            for ( String iface : interfaces){
+                sb.append(getTypeSignature(iface, newScope));
+            }
+        }
+        
+        return sb.toString();
+    }
+    
     public static String getTypeSignature(String type, ClassFinder scope){
-        System.out.println("Getting sig for type "+type);
         if ( isArrayType(type)){
             int dim = getArrayTypeDimension(type);
             String elType = getArrayElementType(type);
@@ -100,7 +130,6 @@ public class TypeUtil {
             if ( lePos != -1 ){
                 type = type.substring(0, lePos);
                 String genericsStr = fullType.substring(lePos+1, fullType.lastIndexOf(">"));
-                System.out.println("Generics string "+genericsStr);
                 List<String> g = new ArrayList<>();
                 char c;
                 int pos=0;
@@ -127,19 +156,22 @@ public class TypeUtil {
                 }
                 
                 g.add(genericsStr.substring(mark, pos).trim());
-                System.out.println(g);
                 generics = g.toArray(new String[0]);
                 
             }
-            
-            ClassNode baseNode = scope.findClass(type);
-            if ( baseNode == null ){
-                throw new RuntimeException("Could not find class "+type);
-            }
-            
             StringBuilder sb = new StringBuilder();
-            sb.append("L")
-                    .append(baseNode.name);
+            if ( scope.isTypeParameter(type)){
+                sb.append("T").append(type);
+            } else {
+                ClassNode baseNode = scope.findStub(type);
+                if ( baseNode == null ){
+                    throw new RuntimeException("Could not find class "+type);
+                }
+
+
+                sb.append("L")
+                        .append(baseNode.name);
+            }
             if ( generics != null ){
                 sb.append("<");
                 for ( String g : generics ){
@@ -148,7 +180,6 @@ public class TypeUtil {
                 sb.append(">");
             }
             sb.append(";");
-            System.out.println("out "+sb);
             return sb.toString();
                 
         }
