@@ -141,6 +141,11 @@ public class WLMirahCompiler {
                     throw new RuntimeException(ex);
                 }
             }
+            try {
+                mirahClassLoader.getIndex().updateIndex();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
             
             // Setup the stub compiler
             javaStubCompiler = new JavaExtendedStubCompiler(context);

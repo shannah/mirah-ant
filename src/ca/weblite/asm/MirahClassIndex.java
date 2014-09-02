@@ -57,12 +57,46 @@ public class MirahClassIndex {
     
     private class ResourceLoader {
         private String path;
+        
+        private InputStream getResourceAsStream(File file){
+            String[] paths = path.split(Pattern.quote(File.pathSeparator));
+            String fPath = file.getPath();
+            for (String root : paths ){
+                if ( fPath.indexOf(root) == 0 ){
+                    return getResourceAsStream(fPath.substring(root.length()));
+                }
+            }
+            return null;
+        }
+        
         private InputStream getResourceAsStream(String file){
             String[] paths = path.split(Pattern.quote(File.pathSeparator));
             for ( String root : paths ){
                 File rootFile = new File(root);
                 URL url = null;
-                if ( rootFile.isDirectory() ){
+                if ( rootFile.getName().endsWith(".mirah")){
+                    lastModified = rootFile.lastModified();
+                    lastSourceFile = new SourceFile();
+                    lastSourceFile.file = rootFile;
+                    lastSourceFile.path = file;
+                    try {
+                        url = rootFile.toURI().toURL();
+                    } catch (MalformedURLException ex) {
+                        Logger.getLogger(MirahClassIndex.class.getName()).
+                                log(Level.SEVERE, null, ex);
+                    }
+                } else if ( rootFile.getName().endsWith(".jar")){
+                    try {
+                        url = new URL("jar:"+rootFile.getPath()+"!"+file);
+                        if ( url != null ){
+                            lastModified = rootFile.lastModified();
+                            
+                        }
+                    } catch (MalformedURLException ex) {
+                        Logger.getLogger(ASMClassLoader.class.getName()).
+                                log(Level.SEVERE, null, ex);
+                    }
+                } else if ( rootFile.isDirectory() ){
                     try {
                         File f = new File(rootFile, file);
                         
@@ -77,18 +111,7 @@ public class MirahClassIndex {
                         Logger.getLogger(ASMClassLoader.class.getName()).
                                 log(Level.SEVERE, null, ex);
                     }
-                } else if ( rootFile.getName().endsWith(".jar")){
-                    try {
-                        url = new URL("jar:"+rootFile.getPath()+"!"+file);
-                        if ( url != null ){
-                            lastModified = rootFile.lastModified();
-                            
-                        }
-                    } catch (MalformedURLException ex) {
-                        Logger.getLogger(ASMClassLoader.class.getName()).
-                                log(Level.SEVERE, null, ex);
-                    }
-                }
+                } 
                 if ( url != null ){
                     try {
                         return url.openStream();
@@ -114,7 +137,17 @@ public class MirahClassIndex {
         
     }
     
-    
+    public void indexFile(File file){
+        String[] paths = loader.path.split(Pattern.quote(File.pathSeparator));
+        String fPath = file.getPath();
+        for (String root : paths ){
+            if ( fPath.indexOf(root) == 0 ){
+                indexFile(fPath.substring(root.length()));
+                return;
+            }
+        }
+        
+    }
     
     public void indexFile(final String sourcePath){
        MirahParser parser = new MirahParser();
@@ -139,7 +172,6 @@ public class MirahClassIndex {
        for ( String k : removes ){
            index.remove(k);
        }
-       
        
        StreamCodeSource source = new StreamCodeSource(
                new File(sourcePath ).getName(), 
@@ -367,10 +399,10 @@ public class MirahClassIndex {
         load(false);
         try (DirectoryStream<Path> ds = Files.newDirectoryStream(f.toPath())){
             for ( Path p : ds){
-                if ( p.toFile().isDirectory() ){
+                if ( p.toFile().getName().endsWith(".mirah")){
+                    indexFile(p.toFile());
+                } else if ( p.toFile().isDirectory() ){
                     indexDirectory(p.toFile());
-                } else if ( p.endsWith(".mirah")){
-                    indexFile(p.toFile().getPath());
                 }
             }
         } 

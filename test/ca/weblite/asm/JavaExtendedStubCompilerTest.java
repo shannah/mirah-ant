@@ -188,6 +188,18 @@ public class JavaExtendedStubCompilerTest {
                 methodReturningListOfStrings.signature
         );
         
+        
+        result = compiler.compile(
+                Type.getObjectType("ca/weblite/asm/JavaClassExtendingMirahClass"),
+                new File("test/ca/weblite/asm/JavaClassExtendingMirahClass.java")
+        );
+            
+        assertTrue(
+                "Compiler result should not be null",
+                result!=null
+        );
+        
+        
        
     }
     
