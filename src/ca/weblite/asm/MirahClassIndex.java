@@ -33,6 +33,7 @@ import mirah.lang.ast.ClassDefinition;
 import mirah.lang.ast.Node;
 import mirah.lang.ast.NodeScanner;
 import mirah.lang.ast.StreamCodeSource;
+import org.mirah.mmeta.SyntaxError;
 import org.objectweb.asm.Type;
 
 /**
@@ -151,75 +152,90 @@ public class MirahClassIndex {
     
     public void indexFile(final String sourcePath){
        MirahParser parser = new MirahParser();
-       InputStream contents = loader.getResourceAsStream(sourcePath);
-       final SourceFile sourceFile = lastSourceFile;
-       long modified = sourceFile.file.lastModified();
-       String sourceFilePath = sourceFile.file.getPath();
-       if (mtimes.containsKey(sourceFilePath) && 
-               mtimes.get(sourceFilePath).longValue() >= modified){
-           // This file hasn't been changed since it was last indexed
-           return;
-       }
-       mtimes.put(sourceFilePath, modified);
-       
-       ArrayList<String> removes = new ArrayList<>();
-       for ( Map.Entry<String,SourceFile> e : index.entrySet()){
-           if ( e.getValue().path.equals(sourceFile.path)){
-               removes.add(e.getKey());
+       InputStream contents = null;
+       try {
+            contents = loader.getResourceAsStream(sourcePath);
+            final SourceFile sourceFile = lastSourceFile;
+            long modified = sourceFile.file.lastModified();
+            String sourceFilePath = sourceFile.file.getPath();
+            if (mtimes.containsKey(sourceFilePath) && 
+                    mtimes.get(sourceFilePath).longValue() >= modified){
+                // This file hasn't been changed since it was last indexed
+                return;
+            }
+            mtimes.put(sourceFilePath, modified);
+
+            ArrayList<String> removes = new ArrayList<>();
+            for ( Map.Entry<String,SourceFile> e : index.entrySet()){
+                if ( e.getValue().path.equals(sourceFile.path)){
+                    removes.add(e.getKey());
+                }
+            }
+
+            for ( String k : removes ){
+                index.remove(k);
+            }
+
+            StreamCodeSource source = new StreamCodeSource(
+                    new File(sourcePath ).getName(), 
+                    contents
+            );
+            //final LinkedList<ClassIndex.Node> stack = new LinkedList<>();
+            Object ast = null;
+            try {
+                 ast = parser.parse(source);
+            } catch ( SyntaxError err){
+                err.printStackTrace();
+                return;
+            }
+
+            if ( ast instanceof Node ){
+                Node node = (Node)ast;
+                node.accept(new NodeScanner(){
+
+                    String packageName=null;
+
+
+                    @Override
+                    public boolean enterPackage(
+                            mirah.lang.ast.Package node, 
+                            Object arg) {
+                        packageName = node.name().identifier();
+
+                        return super.enterPackage(node, arg); 
+                    }
+
+                    @Override
+                    public boolean enterClassDefinition(
+                            ClassDefinition node, 
+                            Object arg) {
+                         String className = packageName.replaceAll("\\.", "/")+"/"+
+                                 node.name().identifier();
+
+                         index.put(className, sourceFile);
+
+                        return super.enterClassDefinition(node, arg); 
+                    }
+
+                    @Override
+                    public Object exitClassDefinition(
+                            ClassDefinition node, 
+                            Object arg) {
+                        return super.exitClassDefinition(node, arg); 
+                    }
+
+
+                }, null);
+
+            }
+            sourceFile.dirty = false;
+       } finally {
+           if ( contents != null ){
+               try {
+                   contents.close();
+               } catch ( Throwable t){}
            }
        }
-       
-       for ( String k : removes ){
-           index.remove(k);
-       }
-       
-       StreamCodeSource source = new StreamCodeSource(
-               new File(sourcePath ).getName(), 
-               contents
-       );
-       //final LinkedList<ClassIndex.Node> stack = new LinkedList<>();
-       Object ast = parser.parse(source);
-       
-       if ( ast instanceof Node ){
-           Node node = (Node)ast;
-           node.accept(new NodeScanner(){
-
-               String packageName=null;
-               
-               
-               @Override
-               public boolean enterPackage(
-                       mirah.lang.ast.Package node, 
-                       Object arg) {
-                   packageName = node.name().identifier();
-                   
-                   return super.enterPackage(node, arg); 
-               }
-
-               @Override
-               public boolean enterClassDefinition(
-                       ClassDefinition node, 
-                       Object arg) {
-                    String className = packageName.replaceAll("\\.", "/")+"/"+
-                            node.name().identifier();
-                   
-                    index.put(className, sourceFile);
-                    
-                   return super.enterClassDefinition(node, arg); 
-               }
-
-               @Override
-               public Object exitClassDefinition(
-                       ClassDefinition node, 
-                       Object arg) {
-                   return super.exitClassDefinition(node, arg); 
-               }
-
-               
-           }, null);
-       
-       }
-       sourceFile.dirty = false;
     }
     
     
