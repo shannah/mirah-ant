@@ -168,11 +168,27 @@ public class JavaExtendedStubCompilerTest {
                 node.signature
         );
         
-        ClassNode arrayList = classLoader.findStub(Type.getObjectType("java/util/ArrayList"));
-        System.out.println("Arraylist signature is "+arrayList.signature);
         
-        ClassNode attributeList = classLoader.findStub(Type.getObjectType("javax/management/AttributeList"));
-        System.out.println("AttributeList signature is "+attributeList.signature);
+        MethodNode methodReturningListOfStrings = null;
+        for ( Object o : node.methods){
+            MethodNode mn = (MethodNode)o;
+            if ( "methodReturningListOfStrings".equals(mn.name)){
+                methodReturningListOfStrings = mn;
+                break;
+            }
+        }
+        assertTrue(
+                "Failed to find methodReturningListOfStrings",
+                methodReturningListOfStrings != null
+        );
+        
+        assertEquals(
+                "Wrong signature for methodReturningListOfStrings",
+                "()Ljava/util/List<Ljava/lang/String;>;",
+                methodReturningListOfStrings.signature
+        );
+        
+       
     }
     
     @Test 

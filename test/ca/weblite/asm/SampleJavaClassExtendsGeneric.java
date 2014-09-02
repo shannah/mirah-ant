@@ -7,11 +7,14 @@
 package ca.weblite.asm;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
  * @author shannah
  */
 public class SampleJavaClassExtendsGeneric extends ArrayList<SampleJavaClass>{
-    
+    public List<String> methodReturningListOfStrings(){
+        return new ArrayList<String>();
+    }
 }
