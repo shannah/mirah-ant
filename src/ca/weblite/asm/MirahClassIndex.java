@@ -411,14 +411,23 @@ public class MirahClassIndex {
 
     }
     
-    public void indexDirectory(File f) throws IOException{
+    public void indexDirectory(File f) throws IOException {
+        indexDirectory(f, false);
+    }
+    
+    private void indexDirectory(File f, boolean skipDirectoryCheck) throws IOException{
         load(false);
+        if ( !skipDirectoryCheck && !f.isDirectory() ){
+            return;
+        }
         try (DirectoryStream<Path> ds = Files.newDirectoryStream(f.toPath())){
             for ( Path p : ds){
                 if ( p.toFile().getName().endsWith(".mirah")){
                     indexFile(p.toFile());
+                } else if ( p.toFile().getName().endsWith(".java")){
+                    // do nothing here.
                 } else if ( p.toFile().isDirectory() ){
-                    indexDirectory(p.toFile());
+                    indexDirectory(p.toFile(), true);
                 }
             }
         } 

@@ -179,21 +179,37 @@ public class JavaExtendedStubCompiler  {
             File sourceDirectory,
             File sourceRoot,
             File destinationDirectory,
-            boolean recursive) 
+            boolean recursive
+            ) 
             throws IOException{
+        compileDirectory(sourceDirectory, sourceRoot, destinationDirectory, recursive, false);
+    }
+    
+    private void compileDirectory(
+            File sourceDirectory,
+            File sourceRoot,
+            File destinationDirectory,
+            boolean recursive,
+            boolean skipDirectoryCheck) 
+            throws IOException{
+        if ( !skipDirectoryCheck && !sourceDirectory.isDirectory()){
+            return;
+        }
         try (DirectoryStream<Path> ds = 
                 Files.newDirectoryStream(sourceDirectory.toPath())){
             for ( Path p : ds){
                 //System.out.println("Path "+p);
-                if ( recursive && p.toFile().isDirectory() ){
+                if ( p.toFile().getName().endsWith(".java")){
+                    compileFile(p.toFile(), sourceRoot, destinationDirectory);
+                }
+                else if ( recursive && p.toFile().isDirectory() ){
                     compileDirectory(
                             p.toFile(),
                             sourceRoot,
                             destinationDirectory, 
-                            recursive
+                            recursive,
+                            true
                     );
-                } else if ( p.toFile().getName().endsWith(".java")){
-                    compileFile(p.toFile(), sourceRoot, destinationDirectory);
                 }
             }
         } 
