@@ -117,8 +117,10 @@ public class MirahcTask extends Task {
                     }
                     
                 });
-                for ( File jar : jars ){
-                    macroClassPath.add(new Path(getProject(), jar.getAbsolutePath()));
+                if ( jars != null ){
+                    for ( File jar : jars ){
+                        macroClassPath.add(new Path(getProject(), jar.getAbsolutePath()));
+                    }
                 }
             }
         }
