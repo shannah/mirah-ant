@@ -127,6 +127,7 @@ public class MirahcTask extends Task {
     
         
         if ( getMacroClassPath() != null ){
+            System.out.println("Setting macro classpath to "+getMacroClassPath().toString());
             c.setMacroClassPath(getMacroClassPath().toString());
         }
         if ( getDest() != null ){
