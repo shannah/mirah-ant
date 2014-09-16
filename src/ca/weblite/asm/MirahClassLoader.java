@@ -77,7 +77,7 @@ public class MirahClassLoader extends BaseClassLoader{
                 
                 try (FileOutputStream fos = new FileOutputStream(fakeFile)){
                     PrintWriter out = new PrintWriter(fos, true);
-                    out.printf(e.getValue());
+                    out.print(e.getValue());
                     out.close();
                 }
 
