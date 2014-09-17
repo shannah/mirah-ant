@@ -95,4 +95,56 @@ public class MirahClassIndexTest {
         
     }
     
+    @Test
+    public void testMirahInterfaceIndex() throws IOException {
+        MirahClassIndex index = new MirahClassIndex();
+        index.setPath("test");
+        index.deleteIndex();
+        index.indexFile("ca/weblite/asm/SampleMirahInterface.mirah");
+        SourceFile sourceFile = index.findSourceFile(
+                Type.getObjectType("ca/weblite/asm/SampleMirahInterface")
+        );
+        assertTrue(
+                "Failed to load source file of SampleMirahInterface",
+                sourceFile!=null
+        );
+        assertEquals(
+                "Source file name is wrong",
+                "SampleMirahInterface.mirah",
+                sourceFile.file.getName()
+        );
+        
+        //index.save();
+        
+        index = new MirahClassIndex();
+        index.setPath("test");
+        sourceFile = index.findSourceFile(
+                Type.getObjectType("ca/weblite/asm/SampleMirahInterface")
+        );
+        assertTrue(
+                "Shouldn't have found source file before loading index",
+                sourceFile==null
+        );
+        
+        index.indexFile("ca/weblite/asm/SampleMirahInterface.mirah");
+        index.save();
+        
+        index = new MirahClassIndex();
+        index.setPath("test");
+        sourceFile = index.findSourceFile(
+                Type.getObjectType("ca/weblite/asm/SampleMirahInterface")
+        );
+        assertTrue(
+                "Failed to find file that was already indexed",
+                sourceFile!=null
+        );
+        
+        assertEquals(
+                "Source file name is wrong",
+                "SampleMirahInterface.mirah",
+                sourceFile.file.getName()
+        );
+        
+    }
+    
 }

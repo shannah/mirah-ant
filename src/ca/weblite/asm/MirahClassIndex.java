@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import mirah.impl.MirahParser;
 import mirah.lang.ast.ClassDefinition;
+import mirah.lang.ast.InterfaceDeclaration;
 import mirah.lang.ast.Node;
 import mirah.lang.ast.NodeScanner;
 import mirah.lang.ast.StreamCodeSource;
@@ -216,6 +217,13 @@ public class MirahClassIndex {
 
                         return super.enterClassDefinition(node, arg); 
                     }
+
+                    @Override
+                    public boolean enterInterfaceDeclaration(InterfaceDeclaration node, Object arg) {
+                        return enterClassDefinition(node, arg);
+                    }
+                    
+                    
 
                     @Override
                     public Object exitClassDefinition(

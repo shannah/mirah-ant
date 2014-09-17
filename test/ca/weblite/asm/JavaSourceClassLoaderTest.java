@@ -97,4 +97,38 @@ public class JavaSourceClassLoaderTest {
         
     }
     
+    @Test
+    public void testLoadJavaSourceInterface() throws IOException {
+        Context ctx = new Context();
+        ASMClassLoader classLoader = new ASMClassLoader(ctx, null);
+        classLoader.setPath(System.getProperty("sun.boot.class.path"));
+        Path cachedir = Files.createTempDirectory("cache");
+        
+        ASMClassLoader cacheLoader = new ASMClassLoader(new Context(), null);
+        cacheLoader.setPath(cachedir.toFile().getPath());
+        
+        
+        JavaSourceClassLoader loader = 
+                new JavaSourceClassLoader(ctx, classLoader, cacheLoader);
+        
+        loader.setPath("test");
+        ClassNode result = loader.findStub(
+                Type.getType("ca/weblite/asm/JavaInterface")
+        );
+        assertTrue("Could not find sample java interface", result != null);
+        assertEquals(
+                "JavaInterface has wrong name", 
+                "ca/weblite/asm/JavaInterface",
+                result.name
+        );
+        assertEquals(
+                "JavaInterface has wrong superclass",
+                "java/lang/Object",
+                result.superName
+        );
+        
+        
+        
+    }
+    
 }

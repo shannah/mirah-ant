@@ -78,4 +78,39 @@ public class MirahClassLoaderTest {
         
     }
     
+    @Test
+    public void testLoadMirahInterface() throws IOException {
+        Context ctx = new Context();
+        ASMClassLoader classLoader = new ASMClassLoader(ctx, null);
+        classLoader.setPath(System.getProperty("sun.boot.class.path"));
+        Path cachedir = Files.createTempDirectory("cache");
+        
+        ASMClassLoader cacheLoader = new ASMClassLoader(new Context(), null);
+        cacheLoader.setPath(cachedir.toFile().getPath());
+        
+        
+        JavaSourceClassLoader loader = 
+                new JavaSourceClassLoader(ctx, classLoader, cacheLoader);
+        
+        loader.setPath("test");
+        
+        MirahClassLoader mirahLoader = new MirahClassLoader(ctx, loader);
+        mirahLoader.setPath("test");
+        Path mirahCacheDir = Files.createTempDirectory("mirahcache");
+        mirahLoader.setCachePath(mirahCacheDir.toString());
+        
+        ClassNode node = mirahLoader.findClass(
+                Type.getObjectType("ca/weblite/asm/SampleMirahInterface")
+        );
+        
+        assertTrue("Could not find SampleMirahInterface", node!=null);
+        
+        node = mirahLoader.findClass(
+                Type.getObjectType("ca/weblite/asm/SampleMirahInterface")
+        );
+        
+        assertTrue("Could not find SampleMirahInterface 2nd time", node!=null);
+        
+    }
+    
 }
