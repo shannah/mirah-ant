@@ -174,6 +174,8 @@ public class WLMirahCompiler {
             //System.out.println("Compiling with classpath "+cp);
             getMirahc().setMacroClasspath(
                     javaStubDirectory.getPath()+File.pathSeparator+
+                            cp+
+                            File.pathSeparator+
                             macroClassPath
             );
             //System.out.println("Macro classpath is "+javaStubDirectory.getPath()+File.pathSeparator+
