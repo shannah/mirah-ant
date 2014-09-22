@@ -56,6 +56,7 @@ public class MirahClassIndex {
     private SourceFile lastSourceFile;
     private boolean loaded=false;
     private Map<String,Long> mtimes = new HashMap<>();
+    private boolean updated=false;
     
     private class ResourceLoader {
         private String path;
@@ -135,7 +136,18 @@ public class MirahClassIndex {
             Logger.getLogger(MirahClassIndex.class.getName()).
                     log(Level.SEVERE, null, ex);
         }
-       return index.get(type.getInternalName());
+       SourceFile out =  index.get(type.getInternalName());
+       if ( out == null && !updated ){
+            try {
+                updateIndex();
+            } catch (IOException ex) {
+                Logger.getLogger(MirahClassIndex.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            updated = true;
+            return findSourceFile(type);
+            
+       }
+       return out;
         
     }
     
@@ -400,6 +412,7 @@ public class MirahClassIndex {
                 }
             }
         }
+        updated = true;
     }
     
     public void deleteIndex() throws IOException{
