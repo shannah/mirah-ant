@@ -11,6 +11,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
@@ -240,6 +241,75 @@ public class JavaExtendedStubCompilerTest {
         System.out.println("About to compile directory ");
         compiler.compileDirectory(new File("test"), new File("test"), testOut, true);
         System.out.println("Directory compiled");
+    }
+    
+    @Test
+    public void testVarArgs() throws Exception{
+        Context ctx = new Context();
+        ASMClassLoader classLoader = new ASMClassLoader(ctx, null);
+        System.out.println(System.getProperties());
+        classLoader.setPath(
+                System.getProperty("sun.boot.class.path") +
+                        File.pathSeparator +
+                        System.getProperty("java.class.path")
+        );
+        
+        Path cachedir = Files.createTempDirectory("cache");
+        
+        ASMClassLoader cacheLoader = new ASMClassLoader(new Context(), null);
+        cacheLoader.setPath(cachedir.toFile().getPath());
+        JavaSourceClassLoader loader = 
+                new JavaSourceClassLoader(ctx, classLoader, cacheLoader);
+        
+        loader.setPath("test");
+        
+        JavaExtendedStubCompiler compiler = new JavaExtendedStubCompiler(ctx);
+        byte[] result = compiler.compile(
+                Type.getObjectType("ca/weblite/asm/testcode/VarArgsTest"),
+                new File("test/ca/weblite/asm/testcode/VarArgsTest.java")
+        );
+        assertTrue(
+                "Compiler result should not be null",
+                result!=null
+        );
+        
+        ClassNode node = new ClassNode();
+        ClassReader reader = new ClassReader(result);
+        reader.accept(node, ClassReader.SKIP_CODE);
+        
+        assertEquals(
+                "Wrong name",
+                "ca/weblite/asm/testcode/VarArgsTest",
+                node.name
+        );
+        
+        MethodNode intArray = null;
+        for ( Object o : node.methods){
+            MethodNode mn = (MethodNode)o;
+            if ( "intArray".equals(mn.name)){
+                intArray = mn;
+                break;
+            }
+        }
+        assertTrue(
+                "Failed to find intArray",
+                intArray != null
+        );
+        
+        assertEquals(
+                "Wrong signature for intArray",
+                "([I)V",
+                intArray.signature
+        );
+        
+        
+        
+        assertTrue(
+                "intArray should have varArgs flag",
+                (intArray.access & Opcodes.ACC_VARARGS) == Opcodes.ACC_VARARGS
+        );
+        
+        
     }
     
 }

@@ -297,9 +297,12 @@ public class JavaExtendedStubCompiler  {
             Object visitConstructor(final MethodTree mt, Object p) {
                 ClassWriter classWriter = cwStack.peek();
                 List<Type> argTypes = new ArrayList<Type>();
+                boolean isVarArgs = false;
                 for (VariableTree v : mt.getParameters()) {  
                     
-                    
+                    if ( v.toString().endsWith("... "+v.getName())){
+                        isVarArgs = true;
+                    }
                     String type = v.getType().toString();
                     String fullType = type;
                     String signature = null;
@@ -346,9 +349,13 @@ public class JavaExtendedStubCompiler  {
                     
                 }
 
-
+                int flags = getFlags(mt.getModifiers().getFlags());
+                if ( isVarArgs){
+                    flags |= Opcodes.ACC_VARARGS;
+                    
+                }
                 classWriter.visitMethod(
-                        getFlags(mt.getModifiers().getFlags()),
+                        flags,
                         mt.getName().toString(),
                         methodDescriptor,
                         null,
@@ -365,14 +372,18 @@ public class JavaExtendedStubCompiler  {
                     // It's a constructor
                     return visitConstructor(mt, p);
                 } else {
+                    boolean isVarArgs = false;
                     ClassWriter classWriter = cwStack.peek();
                     
 
                     List<Type> argTypes = new ArrayList<>();
                     List<String> sigArgTypes = new ArrayList<>();
                     for (VariableTree v : mt.getParameters()) {  
-
+                        
                         String type = v.getType().toString();
+                        if ( v.toString().endsWith("... "+v.getName())){
+                            isVarArgs = true;
+                        }
                         sigArgTypes.add(type);
                         int dim = 0;
                         if ( TypeUtil.isArrayType(type)){
@@ -470,8 +481,14 @@ public class JavaExtendedStubCompiler  {
                                 );
                     }
 
+                    
+                    int flags = getFlags(mt.getModifiers().getFlags());
+                    if ( isVarArgs){
+                        flags |= Opcodes.ACC_VARARGS;
+                        //System.out.println("VarArgs "+flags);
+                    }
                     classWriter.visitMethod(
-                            getFlags(mt.getModifiers().getFlags()),
+                            flags,
                             mt.getName().toString(),
                             methodDescriptor,
                             methodSignature,
@@ -592,7 +609,9 @@ public class JavaExtendedStubCompiler  {
                             break;
                         case STATIC:
                             flags |= Opcodes.ACC_STATIC;
-                            break;  
+                            break; 
+                            
+                        
                         
                     }
                 }
@@ -662,6 +681,7 @@ public class JavaExtendedStubCompiler  {
                 String signature = TypeUtil.getClassSignature(
                         scopeStack.peek(), null, unresolvedSuperName, unresolvedInterfaces);
                 int flags = getFlags(ct.getModifiers().getFlags());
+                
                 switch (ct.getKind()) {
                     case INTERFACE:
                         flags |= Opcodes.ACC_INTERFACE;
