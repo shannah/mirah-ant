@@ -6,6 +6,7 @@
 
 package ca.weblite.mirah.ant.mirrors;
 
+import ca.weblite.asm.TypeUtil;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InnerClassNode;
 

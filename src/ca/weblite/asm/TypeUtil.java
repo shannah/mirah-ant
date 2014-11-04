@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package ca.weblite.mirah.ant.mirrors;
+package ca.weblite.asm;
 
 import ca.weblite.asm.ClassFinder;
 import java.util.ArrayList;
@@ -293,7 +293,8 @@ public class TypeUtil {
                    break;
                case STATIC:
                    flags |= Opcodes.ACC_STATIC;
-                   break;                            
+                   break; 
+               
            }
        }
 

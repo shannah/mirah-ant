@@ -1,5 +1,6 @@
 package ca.weblite.mirah.ant.mirrors;
 
+import ca.weblite.asm.TypeUtil;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;

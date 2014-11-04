@@ -6,6 +6,7 @@
 
 package ca.weblite.mirah.ant.mirrors;
 
+import ca.weblite.asm.TypeUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;

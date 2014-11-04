@@ -6,6 +6,7 @@
 
 package ca.weblite.mirah.ant.mirrors;
 
+import ca.weblite.asm.TypeUtil;
 import ca.weblite.asm.ASMClassLoader;
 import ca.weblite.asm.ClassFinder;
 import ca.weblite.asm.Context;

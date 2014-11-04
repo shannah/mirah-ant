@@ -7,7 +7,6 @@
 package ca.weblite.asm;
 
 
-import ca.weblite.mirah.ant.mirrors.TypeUtil;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ImportTree;
