@@ -1,9 +1,18 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * Copyright 2014 Steve Hannah
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
-
 package ca.weblite.asm;
 
 import ca.weblite.asm.MirahClassIndex.SourceFile;
@@ -28,6 +37,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import mirah.impl.MirahParser;
 import mirah.lang.ast.ClassDefinition;
+import mirah.lang.ast.Import;
 import mirah.lang.ast.InterfaceDeclaration;
 import mirah.lang.ast.Node;
 import mirah.lang.ast.NodeScanner;
@@ -208,8 +218,10 @@ public class MirahClassLoader extends BaseClassLoader{
                                                   typeref().name();
                                           ClassNode iClass = scopeStack.peek().
                                                   findStub(iname);
-                                          assert iClass!=null;
-                                          interfaces.set(i, iClass.name);
+                                          if ( iClass == null ){
+                                              throw new RuntimeException("Failed to find interface "+iname+" in class definition of "+className);
+                                          }
+                                          interfaces.add(iClass.name);
                                      }
                                  }
                                  
@@ -256,6 +268,22 @@ public class MirahClassLoader extends BaseClassLoader{
                             return super.exitClassDefinition(node, arg); 
                         }
 
+                        @Override
+                        public boolean enterImport(Import node, Object arg) {
+                            
+                            if ( scopeStack.isEmpty()){
+                                ClassFinder scope = new ClassFinder(
+                                        context.get(ClassLoader.class), 
+                                        null
+                                );
+                                scopeStack.push(scope);
+                            }
+                            scopeStack.peek().addImport(node.fullName().identifier());
+                            //System.out.println("Entering import: "+node.fullName().identifier());
+                            return super.enterImport(node, arg); 
+                        }
+
+                        
 
                     }, null);
 
