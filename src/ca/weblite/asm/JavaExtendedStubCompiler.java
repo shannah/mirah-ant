@@ -1,9 +1,18 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * Copyright 2014 Steve Hannah
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
-
 package ca.weblite.asm;
 
 
@@ -410,8 +419,15 @@ public class JavaExtendedStubCompiler  {
                                         "Could not find class for "+type
                                 );
                             }
+                            Type argType = Type.getObjectType(stub.name);
+                            argType = Type.getType(
+                                    TypeUtil.getArrayDescriptor(
+                                        argType.getInternalName(), 
+                                        dim
+                                )
+                            );
                             argTypes.add(
-                                    Type.getObjectType(stub.name)
+                                    argType
                             );
                         }
 
@@ -664,7 +680,7 @@ public class JavaExtendedStubCompiler  {
 
                 String impl = ct.getImplementsClause().toString();
                 String[] unresolvedInterfaces = null;
-                if (!"".equals(impl)) {
+                if (impl != null && !"".equals(impl) ) {
                     interfaces = impl.split(",");
                     unresolvedInterfaces = new String[interfaces.length];
                     for ( int i=0; i<interfaces.length; i++){
@@ -674,6 +690,10 @@ public class JavaExtendedStubCompiler  {
                         iface = iface.trim();                        
                         ClassNode inode = scopeStack.peek().findStub(iface);
                         assert inode != null;
+                        if ( inode == null ){
+                            throw new RuntimeException("Could not find stub for interface "+iface);
+                        }
+                        System.out.println("interface "+iface);
                         interfaces[i] = inode.name;
                     }
                 }
