@@ -44,7 +44,6 @@ public class ASMClassLoader extends BaseClassLoader {
 
     @Override
     public ClassNode findStub(Type type) {
-        
         return findClass(type);
     }
     
