@@ -1,0 +1,7 @@
+/dist/
+/build/
+/test_stubs/
+/test_inputs_stubs/
+private
+mirahc.build.dir
+.DS_Store
