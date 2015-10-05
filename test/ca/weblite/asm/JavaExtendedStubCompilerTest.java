@@ -205,6 +205,45 @@ public class JavaExtendedStubCompilerTest {
     }
     
     @Test 
+    public void compileDirectoryWithGenericList() throws IOException{
+        Context ctx = new Context();
+        ASMClassLoader classLoader = new ASMClassLoader(ctx, null);
+        System.out.println(System.getProperties());
+        classLoader.setPath(
+                System.getProperty("sun.boot.class.path") +
+                        File.pathSeparator +
+                        System.getProperty("java.class.path")
+        );
+        Path cachedir = Files.createTempDirectory("cache");
+        Path mirahCachedir = Files.createTempDirectory("mirahcache");
+        
+        
+        ASMClassLoader cacheLoader = new ASMClassLoader(new Context(), null);
+        cacheLoader.setPath(cachedir.toFile().getPath());
+        
+        
+        JavaSourceClassLoader loader = 
+                new JavaSourceClassLoader(ctx, classLoader, cacheLoader);
+        
+        loader.setPath("test_inputs");
+        
+        
+        MirahClassLoader mirahLoader = new MirahClassLoader(ctx, loader);
+        mirahLoader.setPath("test_inputs");
+        mirahLoader.setCachePath(mirahCachedir.toFile().getPath());
+        mirahLoader.getIndex().updateIndex();
+        
+        
+        JavaExtendedStubCompiler compiler = new JavaExtendedStubCompiler(ctx);
+    
+        File testOut = new File("test_inputs_stubs");
+        testOut.mkdirs();
+        System.out.println("About to compile directory ");
+        compiler.compileDirectory(new File("test_inputs"), new File("test_inputs"), testOut, true);
+        System.out.println("Directory compiled");
+    }
+    
+    @Test 
     public void compileDirectory() throws IOException{
         Context ctx = new Context();
         ASMClassLoader classLoader = new ASMClassLoader(ctx, null);
