@@ -20,6 +20,8 @@ import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ImportTree;
 import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.Tree;
+import com.sun.source.tree.TypeParameterTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePathScanner;
@@ -259,6 +261,7 @@ public class JavaExtendedStubCompiler  {
             LinkedList<String> stack = new LinkedList<>();
             LinkedList<ClassInfo> classInfoStack = new LinkedList<>();
             LinkedList<ClassWriter> cwStack = new LinkedList<>();
+            LinkedList<List<? extends TypeParameterTree>> typeParametersStack = new LinkedList<>();
             
             @Override
             public Object visitCompilationUnit(
@@ -387,7 +390,6 @@ public class JavaExtendedStubCompiler  {
                     List<Type> argTypes = new ArrayList<>();
                     List<String> sigArgTypes = new ArrayList<>();
                     for (VariableTree v : mt.getParameters()) {  
-                        
                         String type = v.getType().toString();
                         if ( v.toString().endsWith("... "+v.getName())){
                             isVarArgs = true;
@@ -408,6 +410,11 @@ public class JavaExtendedStubCompiler  {
                                     )
                             ));
                         } else {
+                            
+                            if (isGenericType(type)) {
+                                type = "Object";
+                            }
+                            
                             int arrowPos = type.indexOf("<");
                             if ( arrowPos != -1 ){
                                 type = type.substring(0, arrowPos);
@@ -434,6 +441,10 @@ public class JavaExtendedStubCompiler  {
                     }
 
                     String returnType = mt.getReturnType().toString();
+                    if (isGenericType(returnType)) {
+                        returnType = "Object";
+                    }
+                
                     String methodSignature = null;
                     try {
                         methodSignature = TypeUtil.getMethodSignature(scopeStack.peek(), returnType, sigArgTypes.toArray(new String[0]));
@@ -446,6 +457,9 @@ public class JavaExtendedStubCompiler  {
                     if ( TypeUtil.isArrayType(returnType)){
                         dim = TypeUtil.getArrayTypeDimension(returnType);
                         returnType = TypeUtil.getArrayElementType(returnType); 
+                        if (isGenericType(returnType)) {
+                            returnType = "Object";
+                        }
 
                     }
                     if ( TypeUtil.isPrimitiveType(returnType)){
@@ -467,6 +481,8 @@ public class JavaExtendedStubCompiler  {
                         ClassNode stub = scopeStack.peek().
                                 findStub(returnType);
                         if ( stub == null ){
+                            System.out.println("Type params is "+mt.getTypeParameters());
+                            System.out.println("Type kind is "+mt.getReturnType().getKind());
                             throw new RuntimeException(
                                     "Could not find class for "+returnType
                             );
@@ -528,6 +544,9 @@ public class JavaExtendedStubCompiler  {
 
 
                 String varType = vt.getType().toString();
+                if (isGenericType(varType)) {
+                    varType = "Object";
+                }
                 String signature = null;
                 try {
                     signature = TypeUtil.getTypeSignature(varType, scopeStack.peek());
@@ -594,7 +613,16 @@ public class JavaExtendedStubCompiler  {
                 return super.visitVariable(vt, p); //To change body of generated methods, choose Tools | Templates.
             }
             
-            
+            boolean isGenericType(String type) {
+                for (List<? extends TypeParameterTree> types : typeParametersStack) {
+                    for (TypeParameterTree tree : types) {
+                        if (type.equals(tree.getName().toString())) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
             
             /**
              * Converts modifier flags from Javac Tree into int flags usable in 
@@ -638,7 +666,7 @@ public class JavaExtendedStubCompiler  {
             
             @Override
             public Object visitClass(ClassTree ct, Object p) {
-                
+                typeParametersStack.push(ct.getTypeParameters());
                 String simpleName = ct.getSimpleName().toString();
                 String internalName = getThisInternalName(simpleName);
                 int lastDollar = internalName.lastIndexOf("$");
@@ -788,6 +816,9 @@ public class JavaExtendedStubCompiler  {
                     outMap.put(internalName, bytes);
                     cwStack.pop();
                 }
+                
+                typeParametersStack.pop();
+                
                 return out;
             }
             
