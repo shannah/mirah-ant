@@ -269,7 +269,7 @@ public class WLMirahCompiler {
                         Logger.getLogger(WLMirahCompiler.class.getName()).log(Level.SEVERE, null, ex);
                     } finally {
                         try {
-                            zip.close();
+                            if ( zip != null ) zip.close();
                         } catch (IOException ex) {
                             Logger.getLogger(WLMirahCompiler.class.getName()).log(Level.SEVERE, null, ex);
                         }
