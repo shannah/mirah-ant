@@ -33,7 +33,7 @@ public class ClassFinder {
     Map<String,String> vars = new HashMap<>();
     Map<String,ClassNode> classCache = new HashMap<>();
     Map<String,ClassNode> stubCache = new HashMap<>();
-    Set<String> typeParameters = new HashSet<>();
+    HashMap<String, String> typeParameters = new HashMap<>();
     
     private class SearchPath {
         String path;
@@ -144,11 +144,11 @@ public class ClassFinder {
     }
     
     public boolean isTypeParameter(String name){
-        return typeParameters.contains(name);
+        return typeParameters.containsKey(name);
     }
     
-    public void addTypeParameter(String type){
-        typeParameters.add(type);
+    public void addTypeParameter(String type, String boundType){
+        typeParameters.put(type, boundType);
     }
     
     public void removeTypeParameter(String type){
@@ -156,7 +156,17 @@ public class ClassFinder {
     }
     
     public Set<String> getTypeParameters(){
-        return Collections.unmodifiableSet(typeParameters);
+        HashSet<String> out = new HashSet<String>();
+        
+        out.addAll(Collections.unmodifiableSet(typeParameters.keySet()));
+        if (parent != null) {
+            out.addAll(parent.getTypeParameters());
+        }
+        return out;
+    }
+    
+    public String getTypeParameter(String name) {
+        return typeParameters.get(name);
     }
     
     public void clearTypeParameters(){

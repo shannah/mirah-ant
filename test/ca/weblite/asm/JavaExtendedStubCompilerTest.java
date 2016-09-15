@@ -351,4 +351,49 @@ public class JavaExtendedStubCompilerTest {
         
     }
     
+    @Test
+    public void testGenerics() throws Exception{
+        Context ctx = new Context();
+        ASMClassLoader classLoader = new ASMClassLoader(ctx, null);
+        System.out.println(System.getProperties());
+        classLoader.setPath(
+                System.getProperty("sun.boot.class.path") +
+                        File.pathSeparator +
+                        System.getProperty("java.class.path")
+        );
+        
+        Path cachedir = Files.createTempDirectory("cache");
+        
+        ASMClassLoader cacheLoader = new ASMClassLoader(new Context(), null);
+        cacheLoader.setPath(cachedir.toFile().getPath());
+        JavaSourceClassLoader loader = 
+                new JavaSourceClassLoader(ctx, classLoader, cacheLoader);
+        
+        loader.setPath("test");
+        
+        JavaExtendedStubCompiler compiler = new JavaExtendedStubCompiler(ctx);
+        byte[] result = compiler.compile(
+                Type.getObjectType("ca/weblite/asm/testcode/IHouse"),
+                new File("test/ca/weblite/asm/testcode/IHouse.java")
+        );
+        assertTrue(
+                "Compiler result should not be null",
+                result!=null
+        );
+        
+        ClassNode node = new ClassNode();
+        ClassReader reader = new ClassReader(result);
+        reader.accept(node, ClassReader.SKIP_CODE);
+        
+        assertEquals(
+                "Wrong name",
+                "ca/weblite/asm/testcode/IHouse",
+                node.name
+        );
+        
+        
+        
+        
+    }
+    
 }

@@ -94,7 +94,7 @@ public class TypeUtil {
                 }
                 parts[0] = parts[0].trim();
                 sb.append(parts[0]).append(":").append(getTypeSignature(boundType, scope));
-                newScope.addTypeParameter(parts[0]);
+                newScope.addTypeParameter(parts[0], boundType);
                 
             }
             sb.append(">");
@@ -109,7 +109,12 @@ public class TypeUtil {
         return sb.toString();
     }
     
-    public static String getTypeSignature(String type, ClassFinder scope){
+    public static String getTypeSignature(String type, ClassFinder scope) {
+        return getTypeSignature(type, scope, false);
+    }
+    
+    public static String getTypeSignature(String type, ClassFinder scope, boolean isGenericAlias){
+        
         if ( isArrayType(type)){
             int dim = getArrayTypeDimension(type);
             String elType = getArrayElementType(type);
@@ -175,7 +180,9 @@ public class TypeUtil {
             if ( generics != null ){
                 sb.append("<");
                 for ( String g : generics ){
-                    sb.append(getTypeSignature(g, scope));
+                    //System.out.println("Looking for type signature of "+g);
+                    //System.out.println("Type parameters in scope: "+scope.getTypeParameters());
+                    sb.append(getTypeSignature(g, scope, true));
                 }
                 sb.append(">");
             }

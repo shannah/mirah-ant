@@ -449,7 +449,7 @@ public class JavaExtendedStubCompiler  {
                     try {
                         methodSignature = TypeUtil.getMethodSignature(scopeStack.peek(), returnType, sigArgTypes.toArray(new String[0]));
                     } catch ( Exception ex){
-                        System.out.println("Failed to get signature for method "+mt);
+                        System.out.println("Failed to get signature for method "+mt+" message: "+ex.getMessage());
                     }
                     int dim = 0;
 
@@ -666,6 +666,8 @@ public class JavaExtendedStubCompiler  {
             
             @Override
             public Object visitClass(ClassTree ct, Object p) {
+                //System.out.println("Visiting class "+ct);
+                //System.out.println("Type parameters: "+ct.getTypeParameters());
                 typeParametersStack.push(ct.getTypeParameters());
                 String simpleName = ct.getSimpleName().toString();
                 String internalName = getThisInternalName(simpleName);
@@ -757,6 +759,7 @@ public class JavaExtendedStubCompiler  {
                         context.get(ClassLoader.class),
                         scopeStack.peek()
                 );
+                
                 scope.addImport(
                         internalName.
                                 replaceAll("/",".").
@@ -791,6 +794,13 @@ public class JavaExtendedStubCompiler  {
                                         replaceAll("\\$", ".")
                         );
                     }
+                }
+                for (TypeParameterTree tpTree : ct.getTypeParameters()) {
+                    //System.out.println("Name: "+tpTree.getName());
+                    //System.out.println("Kind: "+tpTree.getKind().name());
+                    //System.out.println("Bounds: "+tpTree.getBounds());
+                    String bounds = (tpTree.getBounds() != null && !tpTree.getBounds().isEmpty()) ? tpTree.getBounds().get(0).toString() : "java.lang.Object";
+                    scope.addTypeParameter(tpTree.getName().toString(), bounds);
                 }
                 scopeStack.push(scope);
                 Object out = super.visitClass(ct, p); 
