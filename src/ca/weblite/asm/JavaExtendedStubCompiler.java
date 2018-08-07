@@ -379,6 +379,15 @@ public class JavaExtendedStubCompiler  {
             
             @Override
             public Object visitMethod(MethodTree mt, Object p) {
+                typeParametersStack.push(mt.getTypeParameters());
+                try {
+                    return visitMethodImpl(mt, p);
+                } finally {
+                    typeParametersStack.pop();
+                }
+            }
+            
+            public Object visitMethodImpl(MethodTree mt, Object p) {
                 if (mt.getReturnType() == null) {
                     // It's a constructor
                     return visitConstructor(mt, p);
@@ -462,6 +471,7 @@ public class JavaExtendedStubCompiler  {
                         }
 
                     }
+                    
                     if ( TypeUtil.isPrimitiveType(returnType)){
                         String descriptor = 
                                 TypeUtil.getDescriptor(returnType);
@@ -478,6 +488,8 @@ public class JavaExtendedStubCompiler  {
                         if ( arrowPos != -1 ){
                             returnType = returnType.substring(0, arrowPos);
                         }
+                        
+                        
                         ClassNode stub = scopeStack.peek().
                                 findStub(returnType);
                         if ( stub == null ){

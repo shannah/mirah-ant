@@ -33,4 +33,8 @@ public class GenericReturnTypes<T> {
     public <V> V getMethodGenericObject(Class<V> cls) {
         return null;
     }
+    
+    public <U> U get(String url, Class<U> type, long id) throws Exception {
+        return null;
+    }
 }
