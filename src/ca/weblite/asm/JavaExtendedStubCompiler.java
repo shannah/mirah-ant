@@ -377,6 +377,7 @@ public class JavaExtendedStubCompiler  {
             }
 
             
+            
             @Override
             public Object visitMethod(MethodTree mt, Object p) {
                 typeParametersStack.push(mt.getTypeParameters());

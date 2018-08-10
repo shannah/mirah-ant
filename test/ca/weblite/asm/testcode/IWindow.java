@@ -16,4 +16,6 @@ public int getWindowColor();
 public void setWindowColor(int newColor);
 
 public String getShape();
+
+public <T>T get(String url, Class<T> type, long id) throws Exception; 
 }

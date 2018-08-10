@@ -88,8 +88,6 @@ public class ASMClassLoader extends BaseClassLoader {
                         } else {
                             blackFileList.add(f.getPath());
                         }
-                    } catch ( FileNotFoundException fnfe){
-                        
                     } catch (IOException ex) {
                         Logger.getLogger(ASMClassLoader.class.getName()).
                                 log(Level.SEVERE, null, ex);

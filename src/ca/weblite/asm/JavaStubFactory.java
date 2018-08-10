@@ -185,6 +185,9 @@ public class JavaStubFactory {
                         iface = iface.trim();                        
                         ClassNode inode = scopeStack.peek().findStub(iface);
                         assert inode != null;
+                        if (inode == null) {
+                            throw new RuntimeException("Cannot find interface "+iface+" while visiting class "+simpleName);
+                        }
                         interfaces[i] = inode.name;
                     }
                     node.interfaces = Arrays.asList(interfaces);
