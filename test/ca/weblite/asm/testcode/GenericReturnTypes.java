@@ -5,11 +5,13 @@
  */
 package ca.weblite.asm.testcode;
 
+import java.util.Iterator;
+
 /**
  *
  * @author shannah
  */
-public class GenericReturnTypes<T> {
+public class GenericReturnTypes<T> implements Iterable<T> {
     public T getGenericObject() {
         return null;
     }
@@ -35,6 +37,11 @@ public class GenericReturnTypes<T> {
     }
     
     public <U> U get(String url, Class<U> type, long id) throws Exception {
+        return null;
+    }
+
+    @Override
+    public Iterator<T> iterator() {
         return null;
     }
 }

@@ -729,8 +729,12 @@ public class JavaExtendedStubCompiler  {
                     for ( int i=0; i<interfaces.length; i++){
                         
                         String iface = interfaces[i];
-                        unresolvedInterfaces[i] = interfaces[i];
-                        iface = iface.trim();                        
+                        if (iface.contains("<")) {
+                            iface = iface.substring(0, iface.indexOf("<"));
+                        }
+                        unresolvedInterfaces[i] = iface;
+                        iface = iface.trim();    
+                        
                         ClassNode inode = scopeStack.peek().findStub(iface);
                         assert inode != null;
                         if ( inode == null ){

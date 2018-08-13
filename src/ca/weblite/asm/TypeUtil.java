@@ -182,7 +182,11 @@ public class TypeUtil {
                 for ( String g : generics ){
                     //System.out.println("Looking for type signature of "+g);
                     //System.out.println("Type parameters in scope: "+scope.getTypeParameters());
-                    sb.append(getTypeSignature(g, scope, true));
+                    if (scope.isTypeParameter(g)) {
+                        sb.append("T").append(g);
+                    } else {
+                        sb.append(getTypeSignature(g, scope, true));
+                    }
                 }
                 sb.append(">");
             }
