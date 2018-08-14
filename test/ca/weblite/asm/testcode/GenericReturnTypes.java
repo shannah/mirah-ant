@@ -5,13 +5,15 @@
  */
 package ca.weblite.asm.testcode;
 
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Iterator;
 
 /**
  *
  * @author shannah
  */
-public class GenericReturnTypes<T> implements Iterable<T> {
+public class GenericReturnTypes<T> extends ArrayList<T> implements Iterable<T> {
     public T getGenericObject() {
         return null;
     }
@@ -43,5 +45,9 @@ public class GenericReturnTypes<T> implements Iterable<T> {
     @Override
     public Iterator<T> iterator() {
         return null;
+    }
+    
+    public boolean isUpdated(Iterable<? extends Serializable> serializables) {
+        return false;
     }
 }

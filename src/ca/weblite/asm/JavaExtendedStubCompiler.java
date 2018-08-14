@@ -675,13 +675,36 @@ public class JavaExtendedStubCompiler  {
                 return flags;
             }
             
-            
-            
             @Override
             public Object visitClass(ClassTree ct, Object p) {
+                // A special scope that is used just for the signature
+                ClassFinder signatureScope = new ClassFinder(
+                        context.get(ClassLoader.class),
+                        scopeStack.peek()
+                );
+                
+                for (TypeParameterTree tpTree : ct.getTypeParameters()) {
+                    //System.out.println("Name: "+tpTree.getName());
+                    //System.out.println("Kind: "+tpTree.getKind().name());
+                    //System.out.println("Bounds: "+tpTree.getBounds());
+                    String bounds = (tpTree.getBounds() != null && !tpTree.getBounds().isEmpty()) ? tpTree.getBounds().get(0).toString() : "java.lang.Object";
+                    signatureScope.addTypeParameter(tpTree.getName().toString(), bounds);
+                }
+                scopeStack.push(signatureScope);
+                try {
+                    return visitClassImpl(ct, p);
+                } finally {
+                    scopeStack.pop();
+                }
+            }
+            
+            
+            public Object visitClassImpl(ClassTree ct, Object p) {
                 //System.out.println("Visiting class "+ct);
                 //System.out.println("Type parameters: "+ct.getTypeParameters());
                 typeParametersStack.push(ct.getTypeParameters());
+                
+                
                 String simpleName = ct.getSimpleName().toString();
                 String internalName = getThisInternalName(simpleName);
                 int lastDollar = internalName.lastIndexOf("$");
@@ -729,9 +752,9 @@ public class JavaExtendedStubCompiler  {
                     for ( int i=0; i<interfaces.length; i++){
                         
                         String iface = interfaces[i];
-                        if (iface.contains("<")) {
-                            iface = iface.substring(0, iface.indexOf("<"));
-                        }
+                        //if (iface.contains("<")) {
+                        //    iface = iface.substring(0, iface.indexOf("<"));
+                        //}
                         unresolvedInterfaces[i] = iface;
                         iface = iface.trim();    
                         
@@ -744,8 +767,17 @@ public class JavaExtendedStubCompiler  {
                         interfaces[i] = inode.name;
                     }
                 }
-                String signature = TypeUtil.getClassSignature(
+                
+                String signature;
+                try {
+                    signature= TypeUtil.getClassSignature(
                         scopeStack.peek(), null, unresolvedSuperName, unresolvedInterfaces);
+                } catch (Throwable t) {
+                    System.err.println("Failed to get class signature for class which extends "+unresolvedSuperName+" and has interfaces "+Arrays.toString(unresolvedInterfaces));
+                    System.err.println("Type params: "+scopeStack.peek().getTypeParameters());
+                    System.err.println("Message was "+t.getMessage());
+                    throw t;
+                }
                 int flags = getFlags(ct.getModifiers().getFlags());
                 
                 switch (ct.getKind()) {

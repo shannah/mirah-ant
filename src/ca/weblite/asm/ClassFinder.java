@@ -65,6 +65,11 @@ public class ClassFinder {
         this.parent = parent;
         this.addDefaultPackage();
         this.addImport("java.lang.*");
+        if (parent != null) {
+            for (String tparam : parent.getTypeParameters()) {
+                addTypeParameter(tparam, parent.getTypeParameter(tparam));
+            }
+        }
     }
     
     public void addImport(String importStmt){
